@@ -43,7 +43,7 @@ class PublicationController extends AbstractController
         $publication = $serializer->deserialize($request->getContent(), Publication::class, 'json');
 
         //Trabajamos los datos como queramos
-
+        //as
         //Serializamos para poder mandar el objeto en la respuesta
         $data = $serializer->serialize($publication, 'json', [AbstractNormalizer::GROUPS => ['publications']]);
 
