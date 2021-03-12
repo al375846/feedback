@@ -5,6 +5,10 @@ namespace App\Entity;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Annotations as OA;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\Ignore;
 
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
@@ -21,42 +25,51 @@ class User implements UserInterface
 
     /**
      * @ORM\Column(type="string", length=180, unique=true)
+     * @OA\Property(type="string", maxLength=180)
+     * @Groups({"publications"})
      */
     private $username;
 
     /**
      * @ORM\Column(type="json")
+     * @Ignore
      */
     private $roles = [];
 
     /**
      * @var string The hashed password
      * @ORM\Column(type="string")
+     * @OA\Property(type="string")
      */
     private $password;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @OA\Property(type="string", maxLength=255)
      */
     private $email;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @OA\Property(type="string", maxLength=255)
      */
     private $name;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @OA\Property(type="string", maxLength=255)
      */
     private $lastname;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @OA\Property(type="string", maxLength=255)
      */
     private $address;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @OA\Property(type="string", maxLength=255)
      */
     private $phone;
 
