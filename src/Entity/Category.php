@@ -20,6 +20,8 @@ class Category
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
+     * @OA\Property(type="integer")
+     * @Groups({"publications", "categories"})
      */
     private $id;
 

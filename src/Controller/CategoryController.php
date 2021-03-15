@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Utils\CategoryTree;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,21 +29,22 @@ class CategoryController extends AbstractController
     #[Route('/api/category', name: 'category_post', methods: ['POST'])]
     /**
      * @OA\Response(response=200, description="Adds a category",
-     *      @OA\JsonContent(type="object",
-     *      @OA\Property(property="name", type="string"),
-     *      @OA\Property(property="description", type="string"),
-     *      @OA\Property(property="parent", type="object", @OA\Property(property="name", type="string"), nullable="true"),
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="id", type="integer"),
+     *     @OA\Property(property="name", type="string"),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="parent", type="object", @OA\Property(property="name", type="string"), nullable="true"),
      * ))
      * @OA\Response(response=400, description="Error while adding",
-     *      @OA\JsonContent(type="object",
-     *      @OA\Property(property="error", type="string")
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
      * ))
      * @OA\RequestBody(description="Input data format",
-     *      @OA\JsonContent(type="object",
-     *      @OA\Property(property="name", type="string"),
-     *      @OA\Property(property="description", type="string"),
-     *      @OA\Property(property="parent", type="object", @OA\Property(property="name", type="string"), nullable="true"),
-     *      @OA\Property(property="username", type="string"),
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="name", type="string"),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="parent", type="object", @OA\Property(property="name", type="string"), nullable="true"),
+     *     @OA\Property(property="username", type="string"),
      * ))
      * @OA\Tag(name="Categories")
      * @Security(name="Bearer")
@@ -89,6 +91,43 @@ class CategoryController extends AbstractController
         $response=array(
             'status'=>200,
             'publication'=>json_decode($data)
+        );
+
+        return new JsonResponse($response,200);
+    }
+
+    #[Route('/api/category', name: 'categories_get', methods: ['GET'])]
+    /**
+     * @OA\Response(response=200, description="Adds a category",
+     *     @OA\JsonContent(type="array",@OA\Items(
+     *     @OA\Property(property="id", type="integer"),
+     *     @OA\Property(property="name", type="string"),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="children", type="array",
+     *     @OA\Items(type="object", @OA\Property(property="id", type="integer"), @OA\Property(property="name", type="string"), @OA\Property(property="description", type="string")))
+     * )))
+     * @OA\Tag(name="Categories")
+     * @Security(name="Bearer")
+     */
+    public function getCategories(CategoryTree $categoryTree): Response
+    {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Trabajamos los datos como queramos
+        $categories = $this->getDoctrine()->getRepository(Category::class)->findAll();
+        $ordercat = $categoryTree->buildTree();
+
+        //Serializamos para poder mandar el objeto en la respuesta
+        $data = $serializer->serialize($ordercat, 'json');
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'status'=>200,
+            'categories'=>json_decode($data)
         );
 
         return new JsonResponse($response,200);

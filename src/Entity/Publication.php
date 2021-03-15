@@ -20,6 +20,8 @@ class Publication
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
+     * @OA\Property(type="integer")
+     * @Groups({"publications"})
      */
     private $id;
 
@@ -80,6 +82,13 @@ class Publication
      * @Groups({"publications"})
      */
     private $apprentice;
+
+    /**
+     * @ORM\Column(type="datetime")
+     * @OA\Property(type="datetime")
+     * @Groups({"publications"})
+     */
+    private $date;
 
     public function getId(): ?int
     {
@@ -178,6 +187,18 @@ class Publication
     public function setApprentice(?Apprentice $apprentice): self
     {
         $this->apprentice = $apprentice;
+
+        return $this;
+    }
+
+    public function getDate(): ?\DateTimeInterface
+    {
+        return $this->date;
+    }
+
+    public function setDate(\DateTimeInterface $date): self
+    {
+        $this->date = $date;
 
         return $this;
     }
