@@ -14,7 +14,7 @@ use Symfony\Component\Serializer\Annotation\Ignore;
  * @ORM\Entity(repositoryClass=UserRepository::class)
  * @ORM\Table(name="`user`")
  */
-class User implements UserInterface
+class User implements UserInterface, \Serializable
 {
     /**
      * @ORM\Id
@@ -207,5 +207,40 @@ class User implements UserInterface
         $this->phone = $phone;
 
         return $this;
+    }
+
+    /** @see \Serializable::serialize() */
+    public function serialize()
+    {
+        return serialize(array(
+            is_object($this->user) ? clone $this->user : $this->user,
+            $this->id,
+            $this->username,
+            $this->password,
+            $this->email,
+            $this->name,
+            $this->lastname,
+            $this->address,
+            $this->phone,
+            // see section on salt below
+            // $this->salt,
+        ));
+    }
+
+    /** @see \Serializable::unserialize() */
+    public function unserialize($serialized)
+    {
+        list (
+            $this->id,
+            $this->username,
+            $this->password,
+            $this->email,
+            $this->name,
+            $this->lastname,
+            $this->address,
+            $this->phone,
+            // see section on salt below
+            // $this->salt
+            ) = unserialize($serialized);
     }
 }
