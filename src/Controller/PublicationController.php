@@ -159,4 +159,42 @@ class PublicationController extends AbstractController
 
         return new JsonResponse($response, 200);
     }
+
+    #[Route('/api/publication/{id}', name: 'publication_get_id', methods: ['GET'])]
+    /**
+     * @OA\Response(response=200, description="Adds a publication",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="title", type="string"),
+     *     @OA\Property(property="category", type="object", @OA\Property(property="name", type="string")),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="tags", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="video", type="string"),
+     *     @OA\Property(property="document", type="string"),
+     *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="apprentice", type="object", @OA\Property(property="userdata", type="object", @OA\Property(property="username", type="string"))),
+     *     @OA\Property(property="date", type="string", format="date-time")
+     * ))
+     * @OA\Tag(name="Publications")
+     * @Security(name="Bearer")
+     */
+    public function getPublication($id): Response {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Trabajamos los datos como queramos
+        $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
+        //Serializamos para poder mandar el objeto en la respuesta
+        $data = $serializer->serialize($publication, 'json', [AbstractNormalizer::GROUPS => ['publications']]);
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'status'=>200,
+            'publication'=>json_decode($data)
+        );
+
+        return new JsonResponse($response, 200);
+    }
 }
