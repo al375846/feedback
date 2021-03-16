@@ -48,27 +48,20 @@ class PublicationController extends AbstractController
      *     @OA\Property(property="date", type="string", format="date-time")
      * ))
      * @OA\RequestBody(description="Input data format",
-     *     @OA\MediaType(mediaType="multipart/form-data",
-     *     @OA\Schema(
-     *     @OA\Property(property="video", type="string", format="binary"),
-     *     @OA\Property(property="document", type="string", format="binary"),
-     *     @OA\Property(property="image", type="string", format="binary"),
-     *     @OA\Property(property="publication", type="object",
-     *          @OA\Property(property="title", type="string"),
-     *          @OA\Property(property="category", type="object", @OA\Property(property="name", type="string")),
-     *          @OA\Property(property="description", type="string"),
-     *          @OA\Property(property="tags", type="array", @OA\Items(type="string")),
-     *          @OA\Property(property="username", type="string"),
-     *          @OA\Property(property="date", type="string", format="date-time"))
-     *     )
-     *     )
-     * )
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="title", type="string"),
+     *     @OA\Property(property="category", type="object", @OA\Property(property="name", type="string")),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="tags", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="username", type="string"),
+     *     @OA\Property(property="date", type="string", format="date-time")
+     * ))
      * @OA\Tag(name="Publications")
      * @Security(name="Bearer")
      */
-    public function postPublication(Request $request, UploaderService $uploaderService): Response
+    public function postPublication(Request $request): Response
     {
-        //dump($request->files);
+
         //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
@@ -76,8 +69,8 @@ class PublicationController extends AbstractController
         $serializer = new Serializer($normalizers, $encoders);
 
         //Deserializamos para obtener los datos del objeto
-        $publication = $serializer->deserialize($request->request->get("publication"), Publication::class, 'json', [AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']]);
-        $user = $serializer->deserialize($request->request->get("publication"), User::class, 'json', [AbstractNormalizer::ATTRIBUTES => ['username']]);
+        $publication = $serializer->deserialize($request->getContent(), Publication::class, 'json', [AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']]);
+        $user = $serializer->deserialize($request->getContent(), User::class, 'json', [AbstractNormalizer::ATTRIBUTES => ['username']]);
 
         //Trabajamos los datos como queramos
         $em = $this->getDoctrine()->getManager();
@@ -88,32 +81,9 @@ class PublicationController extends AbstractController
         $userdata = $this->getDoctrine()->getRepository(User::class)->findBy(['username'=>$user->getUsername()], null);
         $apprentice = $this->getDoctrine()->getRepository(Apprentice::class)->findBy(['userdata'=>$userdata[0]], null);
         $publication->setApprentice($apprentice[0]);
-        //Subimos los archivos
-        $images = array();
-        $document = null;
-        $video = null;
-        foreach($request->files->getIterator() as $file) {
-            $filename = $uploaderService->upload($file);
-            $arrayfile = explode(".", $filename);
-            $extension = $arrayfile[count($arrayfile) - 1];
-            if ($extension == "pdf") {
-                $document = $filename;
-
-            }
-            else {
-                if ($extension == "mp4") {
-                    $video = $filename;
-                }
-                elseif ($extension == "jpg" or $extension == "jpeg" or $extension == "png") {
-                    $images[count($images)] = $filename;
-                }
-            }
-        }
-        $publication->setVideo($video);
-        $publication->setDocument($document);
-        $publication->setImages($images);
         $em->persist($publication);
         $em->flush();
+        $id = $this->getDoctrine()->getRepository(Publication::class)->findBy(['title'=>$publication->getTitle()], ['id'=>'DESC'])[0]->getId();
 
         //Serializamos para poder mandar el objeto en la respuesta
         $data = $serializer->serialize($publication, 'json', [AbstractNormalizer::GROUPS => ['publications'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['id']]);
@@ -121,7 +91,8 @@ class PublicationController extends AbstractController
         //Puede tener los atributos que se quieran
         $response=array(
             'status'=>200,
-            'publication'=>json_decode($data)
+            'publication'=>json_decode($data),
+            'id'=>$id
         );
 
         return new JsonResponse($response,200);
@@ -235,5 +206,73 @@ class PublicationController extends AbstractController
         );
         $response->headers->set('Content-Disposition', $disposition);
         return $response;
+    }
+
+    #[Route('/api/publication/{id}/file', name: 'publication_post_file', methods: ['POST'])]
+    /**
+     * @OA\Response(response=200, description="Adds a publication",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="video", type="string"),
+     *     @OA\Property(property="document", type="string"),
+     *     @OA\Property(property="images", type="array", @OA\Items(type="string"))
+     * ))
+     * @OA\RequestBody(description="Input data format",
+     *     @OA\MediaType(mediaType="multipart/form-data",
+     *     @OA\Schema(
+     *     @OA\Property(property="video", type="string", format="binary"),
+     *     @OA\Property(property="document", type="string", format="binary"),
+     *     @OA\Property(property="image", type="string", format="binary")
+     *     )
+     *     )
+     * )
+     * @OA\Tag(name="Publications")
+     * @Security(name="Bearer")
+     */
+    public function postPublicationFile($id, Request $request, UploaderService $uploaderService): Response {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Obtenemos la publicacion
+        $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
+
+        //Subimos los archivos
+        $images = $publication->getImages();
+        $document = $publication->getDocument();
+        $video = $publication->getVideo();
+        foreach($request->files->getIterator() as $file) {
+            $filename = $uploaderService->upload($file);
+            $arrayfile = explode(".", $filename);
+            $extension = $arrayfile[count($arrayfile) - 1];
+            if ($extension == "pdf") {
+                $document = $filename;
+            }
+            elseif ($extension == "mp4") {
+                    $video = $filename;
+            }
+            elseif ($extension == "jpg" or $extension == "jpeg" or $extension == "png") {
+                    $images[count($images)] = $filename;
+            }
+        }
+        $publication->setVideo($video);
+        $publication->setDocument($document);
+        $publication->setImages($images);
+
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($publication);
+        $em->flush();
+
+        //Serializamos para poder mandar el objeto en la respuesta
+        $data = $serializer->serialize($publication, 'json', [AbstractNormalizer::ATTRIBUTES => ['video', 'document', 'images']]);
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'status'=>200,
+            'publication'=>json_decode($data)
+        );
+
+        return new JsonResponse($response, 200);
     }
 }
