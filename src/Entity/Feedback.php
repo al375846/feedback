@@ -37,6 +37,7 @@ class Feedback
      * @ORM\ManyToOne(targetEntity=Expert::class, inversedBy="feedback")
      * @ORM\JoinColumn(nullable=false)
      * @OA\Property(ref=@Model(type=Expert::class))
+     * @Groups({"feedbacks"})
      */
     private $expert;
 

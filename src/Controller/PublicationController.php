@@ -99,7 +99,7 @@ class PublicationController extends AbstractController
 
     #[Route('/api/publication', name: 'publication_get', methods: ['GET'])]
     /**
-     * @OA\Response(response=200, description="Adds a publication",
+     * @OA\Response(response=200, description="Gets all publications",
      *     @OA\JsonContent(type="array", @OA\Items(
      *     @OA\Property(property="title", type="string"),
      *     @OA\Property(property="category", type="object", @OA\Property(property="name", type="string")),
@@ -137,7 +137,7 @@ class PublicationController extends AbstractController
 
     #[Route('/api/publication/{id}', name: 'publication_get_id', methods: ['GET'])]
     /**
-     * @OA\Response(response=200, description="Adds a publication",
+     * @OA\Response(response=200, description="Gets a publication",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="title", type="string"),
      *     @OA\Property(property="category", type="object", @OA\Property(property="name", type="string")),
@@ -175,7 +175,7 @@ class PublicationController extends AbstractController
 
     #[Route('/api/publication/file/{filename}', name: 'publication_get_file', methods: ['GET'])]
     /**
-     * @OA\Response(response=200, description="Adds a publication",
+     * @OA\Response(response=200, description="Gets a file from a publication",
      *     @OA\MediaType(mediaType="application/pdf",
      *     @OA\Schema(@OA\Property(property="document", type="string", format="binary"))),
      *     @OA\MediaType(mediaType="image/png",
@@ -209,7 +209,7 @@ class PublicationController extends AbstractController
 
     #[Route('/api/publication/{id}/file', name: 'publication_post_file', methods: ['POST'])]
     /**
-     * @OA\Response(response=200, description="Adds a publication",
+     * @OA\Response(response=200, description="Adds a file to publication",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="video", type="string"),
      *     @OA\Property(property="document", type="string"),

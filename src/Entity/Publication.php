@@ -21,7 +21,7 @@ class Publication
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
      * @OA\Property(type="integer")
-     * @Groups({"publications", "feedback"})
+     * @Groups({"publications", "feedbacks"})
      */
     private $id;
 

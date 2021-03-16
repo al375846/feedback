@@ -40,7 +40,7 @@ class FeedbackController extends AbstractController
      * @OA\Parameter(name="publication", in="query", description="Publication id", required=true,
      *     @OA\Schema(type="integer")
      * )
-     * @OA\Response(response=200, description="Adds a publication",
+     * @OA\Response(response=200, description="Adds a feedback",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="name", type="string"),
      *     @OA\Property(property="exepert", type="object", @OA\Property(property="userdata", type="object", @OA\Property(property="username", type="string"))),
@@ -99,5 +99,79 @@ class FeedbackController extends AbstractController
         );
 
         return new JsonResponse($response,200);
+    }
+
+    #[Route('/api/feedback', name: 'feedback_get', methods: ['GET'])]
+    /**
+     * @OA\Response(response=200, description="Gets all feedbacks",
+     *     @OA\JsonContent(type="array", @OA\Items(
+     *     @OA\Property(property="name", type="string"),
+     *     @OA\Property(property="exepert", type="object", @OA\Property(property="userdata", type="object", @OA\Property(property="username", type="string"))),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="video", type="string"),
+     *     @OA\Property(property="document", type="string"),
+     *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="valoration", type="integer"),
+     *     @OA\Property(property="date", type="string", format="date-time")
+     * )))
+     * @OA\Tag(name="Feedbacks")
+     * @Security(name="Bearer")
+     */
+    public function getFeedbacks(): Response {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Trabajamos los datos como queramos
+        $feedbacks = $this->getDoctrine()->getRepository(Feedback::class)->findAll();
+        //Serializamos para poder mandar el objeto en la respuesta
+        $data = $serializer->serialize($feedbacks, 'json', [AbstractNormalizer::GROUPS => ['feedbacks']]);
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'status'=>200,
+            'feedbacks'=>json_decode($data)
+        );
+
+        return new JsonResponse($response, 200);
+    }
+
+    #[Route('/api/feedback/{id}', name: 'feedback_get_id', methods: ['GET'])]
+    /**
+     * @OA\Response(response=200, description="Gets a feedback",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="name", type="string"),
+     *     @OA\Property(property="exepert", type="object", @OA\Property(property="userdata", type="object", @OA\Property(property="username", type="string"))),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="video", type="string"),
+     *     @OA\Property(property="document", type="string"),
+     *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="valoration", type="integer"),
+     *     @OA\Property(property="date", type="string", format="date-time")
+     * ))
+     * @OA\Tag(name="Feedbacks")
+     * @Security(name="Bearer")
+     */
+    public function getFeedback($id): Response {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Trabajamos los datos como queramos
+        $feedbacks = $this->getDoctrine()->getRepository(Feedback::class)->find($id);
+        //Serializamos para poder mandar el objeto en la respuesta
+        $data = $serializer->serialize($feedbacks, 'json', [AbstractNormalizer::GROUPS => ['feedbacks']]);
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'status'=>200,
+            'feedback'=>json_decode($data)
+        );
+
+        return new JsonResponse($response, 200);
     }
 }
