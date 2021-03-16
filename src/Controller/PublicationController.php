@@ -26,6 +26,10 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
 use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
 use App\Entity\Publication;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 
 class PublicationController extends AbstractController
 {
@@ -54,7 +58,7 @@ class PublicationController extends AbstractController
      *          @OA\Property(property="category", type="object", @OA\Property(property="name", type="string")),
      *          @OA\Property(property="description", type="string"),
      *          @OA\Property(property="tags", type="array", @OA\Items(type="string")),
-     *          @OA\Property(property="apprentice", type="object", @OA\Property(property="userdata", type="object", @OA\Property(property="username", type="string"))),
+     *          @OA\Property(property="username", type="string"),
      *          @OA\Property(property="date", type="string", format="date-time"))
      *     )
      *     )
@@ -72,7 +76,8 @@ class PublicationController extends AbstractController
         $serializer = new Serializer($normalizers, $encoders);
 
         //Deserializamos para obtener los datos del objeto
-        $publication = $serializer->deserialize($request->request->get("publication"), Publication::class, 'json');
+        $publication = $serializer->deserialize($request->request->get("publication"), Publication::class, 'json', [AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']]);
+        $user = $serializer->deserialize($request->request->get("publication"), User::class, 'json', [AbstractNormalizer::ATTRIBUTES => ['username']]);
 
         //Trabajamos los datos como queramos
         $em = $this->getDoctrine()->getManager();
@@ -80,8 +85,8 @@ class PublicationController extends AbstractController
         $category = $this->getDoctrine()->getRepository(Category::class)->findBy(['name'=>$publication->getCategory()->getName()], null);
         $publication->setCategory($category[0]);
         //Decidimos el aprendiz
-        $userdata = $this->getDoctrine()->getRepository(User::class)->findBy(['username'=>$publication->getApprentice()->getUserdata()->getUsername()], null);
-        $apprentice = $this->getDoctrine()->getRepository(Apprentice::class)->findBy(['userdata'=>$userdata], null);
+        $userdata = $this->getDoctrine()->getRepository(User::class)->findBy(['username'=>$user->getUsername()], null);
+        $apprentice = $this->getDoctrine()->getRepository(Apprentice::class)->findBy(['userdata'=>$userdata[0]], null);
         $publication->setApprentice($apprentice[0]);
         //Subimos los archivos
         $images = array();
@@ -196,5 +201,39 @@ class PublicationController extends AbstractController
         );
 
         return new JsonResponse($response, 200);
+    }
+
+    #[Route('/api/publication/file/{filename}', name: 'publication_get_file', methods: ['GET'])]
+    /**
+     * @OA\Response(response=200, description="Adds a publication",
+     *     @OA\MediaType(mediaType="application/pdf",
+     *     @OA\Schema(@OA\Property(property="document", type="string", format="binary"))),
+     *     @OA\MediaType(mediaType="image/png",
+     *     @OA\Schema(@OA\Property(property="image", type="string", format="binary"))),
+     *     @OA\MediaType(mediaType="image/jpg",
+     *     @OA\Schema(@OA\Property(property="image", type="string", format="binary"))),
+     *     @OA\MediaType(mediaType="image/jpeg",
+     *     @OA\Schema(@OA\Property(property="image", type="string", format="binary"))),
+     *     @OA\MediaType(mediaType="video/mp4",
+     *     @OA\Schema(@OA\Property(property="video", type="string", format="binary"))),
+     * )
+     * @OA\Tag(name="Publications")
+     * @Security(name="Bearer")
+     */
+    public function getPublicationFile($filename) {
+        $root = $this->getParameter('kernel.project_dir');
+        $finder = new Finder();
+        $finder->files()->in($root)->name($filename);
+        $filesend = null;
+        foreach ($finder as $file) {
+            $filesend = $file->getRealPath();
+        }
+        $response = new BinaryFileResponse($filesend);
+        $disposition = HeaderUtils::makeDisposition(
+            HeaderUtils::DISPOSITION_ATTACHMENT,
+            $filename
+        );
+        $response->headers->set('Content-Disposition', $disposition);
+        return $response;
     }
 }
