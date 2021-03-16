@@ -61,7 +61,6 @@ class PublicationController extends AbstractController
      */
     public function postPublication(Request $request): Response
     {
-
         //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));

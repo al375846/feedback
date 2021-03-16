@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Apprentice;
 use App\Entity\Category;
+use App\Entity\Expert;
+use App\Entity\Feedback;
 use App\Service\UploaderService;
 use App\Entity\User;
 use Psr\Container\ContainerInterface;
@@ -35,41 +37,67 @@ class FeedbackController extends AbstractController
 {
     #[Route('/api/feedback', name: 'feedback_post', methods: ['POST'])]
     /**
+     * @OA\Parameter(name="publication", in="query", description="Publication id", required=true,
+     *     @OA\Schema(type="integer")
+     * )
      * @OA\Response(response=200, description="Adds a publication",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="title", type="string"),
-     *     @OA\Property(property="category", type="object", @OA\Property(property="name", type="string")),
+     *     @OA\Property(property="name", type="string"),
+     *     @OA\Property(property="exepert", type="object", @OA\Property(property="userdata", type="object", @OA\Property(property="username", type="string"))),
      *     @OA\Property(property="description", type="string"),
-     *     @OA\Property(property="tags", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="video", type="string"),
      *     @OA\Property(property="document", type="string"),
      *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
-     *     @OA\Property(property="apprentice", type="object", @OA\Property(property="userdata", type="object", @OA\Property(property="username", type="string"))),
+     *     @OA\Property(property="valoration", type="integer"),
      *     @OA\Property(property="date", type="string", format="date-time")
      * ))
      * @OA\RequestBody(description="Input data format",
-     *     @OA\MediaType(mediaType="multipart/form-data",
-     *     @OA\Schema(
-     *     @OA\Property(property="video", type="string", format="binary"),
-     *     @OA\Property(property="document", type="string", format="binary"),
-     *     @OA\Property(property="image", type="string", format="binary"),
-     *     @OA\Property(property="publication", type="object",
-     *          @OA\Property(property="title", type="string"),
-     *          @OA\Property(property="category", type="object", @OA\Property(property="name", type="string")),
-     *          @OA\Property(property="description", type="string"),
-     *          @OA\Property(property="tags", type="array", @OA\Items(type="string")),
-     *          @OA\Property(property="username", type="string"),
-     *          @OA\Property(property="date", type="string", format="date-time"))
-     *     )
-     *     )
-     * )
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="username", type="string"),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="date", type="string", format="date-time")
+     * ))
      * @OA\Tag(name="Feedbacks")
      * @Security(name="Bearer")
      */
-    public function postFeedback(): Response
+    public function postFeedback(Request $request): Response
     {
-        return $this->render('feedback/index.html.twig', [
-            'controller_name' => 'FeedbackController',
-        ]);
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Deserializamos para obtener los datos del objeto
+        $user = $serializer->deserialize($request->getContent(), User::class, 'json', [AbstractNormalizer::ATTRIBUTES => ['username']]);
+        $feedback = $serializer->deserialize($request->getContent(), Feedback::class, 'json', [AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']]);
+
+        //Trabajamos los datos como queramos
+        $em = $this->getDoctrine()->getManager();
+        //Obtenemos la publicacion
+        $publication = $this->getDoctrine()->getRepository(Publication::class)->find($request->query->get('publication'));
+        dump($publication);
+        $feedback->setPublication($publication);
+        //Decidimos el experto
+        $userdata = $this->getDoctrine()->getRepository(User::class)->findBy(['username'=>$user->getUsername()]);
+        dump($userdata);
+        $expert = $this->getDoctrine()->getRepository(Expert::class)->findBy(['userdata'=>$userdata[0]]);
+        dump($expert);
+        $feedback->setExpert($expert[0]);
+        $em->persist($feedback);
+        $em->flush();
+        $id = $this->getDoctrine()->getRepository(Feedback::class)->findBy(['publication'=>$feedback->getPublication()], ['id'=>'DESC'])[0]->getId();
+
+        //Serializamos para poder mandar el objeto en la respuesta
+        $data = $serializer->serialize($feedback, 'json', [AbstractNormalizer::GROUPS => ['feedbacks'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['id']]);
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'status'=>200,
+            'feedback'=>json_decode($data),
+            'id'=>$id
+        );
+
+        return new JsonResponse($response,200);
     }
 }

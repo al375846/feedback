@@ -6,6 +6,10 @@ use App\Repository\ExpertRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Annotations as OA;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\Ignore;
 
 /**
  * @ORM\Entity(repositoryClass=ExpertRepository::class)
@@ -22,6 +26,8 @@ class Expert
     /**
      * @ORM\OneToOne(targetEntity=User::class, cascade={"persist", "remove"})
      * @ORM\JoinColumn(nullable=false)
+     * @OA\Property(ref=@Model(type=User::class))
+     * @Groups({"feedbacks"})
      */
     private $userdata;
 

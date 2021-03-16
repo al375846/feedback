@@ -4,6 +4,13 @@ namespace App\Entity;
 
 use App\Repository\FeedbackRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Annotations as OA;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\Ignore;
+use App\Entity\Publication;
+use App\Entity\Expert;
+use App\Entity\Valoration;
 
 /**
  * @ORM\Entity(repositoryClass=FeedbackRepository::class)
@@ -14,48 +21,64 @@ class Feedback
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
+     * @OA\Property(type="integer")
      */
     private $id;
 
     /**
      * @ORM\ManyToOne(targetEntity=Publication::class)
      * @ORM\JoinColumn(nullable=false)
+     * @OA\Property(ref=@Model(type=Publication::class))
+     * @Groups({"feedbacks"})
      */
     private $publication;
 
     /**
      * @ORM\ManyToOne(targetEntity=Expert::class, inversedBy="feedback")
      * @ORM\JoinColumn(nullable=false)
+     * @OA\Property(ref=@Model(type=Expert::class))
      */
     private $expert;
 
     /**
      * @ORM\Column(type="text")
+     * @OA\Property(type="string")
+     * @Groups({"feedbacks"})
      */
     private $description;
 
     /**
-     * @ORM\Column(type="string", length=255)
+     * @ORM\Column(type="string", length=255, nullable=true)
+     * @OA\Property(type="string", maxLength=255)
+     * @Groups({"feedbacks"})
      */
     private $video;
 
     /**
-     * @ORM\Column(type="string", length=255)
+     * @ORM\Column(type="string", length=255, nullable=true)
+     * @OA\Property(type="string", maxLength=255)
+     * @Groups({"feedbacks"})
      */
     private $document;
 
     /**
-     * @ORM\Column(type="array")
+     * @ORM\Column(type="array", nullable=true)
+     * @OA\Property(type="array", @OA\Items(type="string"))
+     * @Groups({"feedbacks"})
      */
     private $images = [];
 
     /**
      * @ORM\OneToOne(targetEntity=Valoration::class, mappedBy="feedback", cascade={"persist", "remove"})
+     * @OA\Property(ref=@Model(type=Valoration::class))
+     * @Groups({"feedbacks"})
      */
     private $valoration;
 
     /**
      * @ORM\Column(type="datetime")
+     * @OA\Property(type="datetime")
+     * @Groups({"feedbacks"})
      */
     private $date;
 

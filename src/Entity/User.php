@@ -26,7 +26,7 @@ class User implements UserInterface, \Serializable
     /**
      * @ORM\Column(type="string", length=180, unique=true)
      * @OA\Property(type="string", maxLength=180)
-     * @Groups({"publications"})
+     * @Groups({"publications", "feedbacks"})
      */
     private $username;
 
