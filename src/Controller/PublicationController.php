@@ -246,10 +246,10 @@ class PublicationController extends AbstractController
             $arrayfile = explode(".", $filename);
             $extension = $arrayfile[count($arrayfile) - 1];
             if ($extension == "pdf") {
-                $document = $filename;
+                $document[count($document)] = $filename;
             }
             elseif ($extension == "mp4") {
-                    $video = $filename;
+                    $video[count($video)] = $filename;
             }
             elseif ($extension == "jpg" or $extension == "jpeg" or $extension == "png") {
                     $images[count($images)] = $filename;

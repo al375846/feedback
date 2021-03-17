@@ -55,18 +55,18 @@ class Publication
     private $tags = [];
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     * @OA\Property(type="string", maxLength=255)
+     * @ORM\Column(type="array", nullable=true)
+     * @OA\Property(type="array", @OA\Items(type="string"))
      * @Groups({"publications"})
      */
-    private $video;
+    private $video = [];
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     * @OA\Property(type="string", maxLength=255)
+     * @ORM\Column(type="array", nullable=true)
+     * @OA\Property(type="array", @OA\Items(type="string"))
      * @Groups({"publications"})
      */
-    private $document;
+    private $document = [];
 
     /**
      * @ORM\Column(type="array", nullable=true)
@@ -143,24 +143,24 @@ class Publication
         return $this;
     }
 
-    public function getVideo(): ?string
+    public function getVideo(): ?array
     {
         return $this->video;
     }
 
-    public function setVideo(?string $video): self
+    public function setVideo(?array $video): self
     {
         $this->video = $video;
 
         return $this;
     }
 
-    public function getDocument(): ?string
+    public function getDocument(): ?array
     {
         return $this->document;
     }
 
-    public function setDocument(?string $document): self
+    public function setDocument(?array $document): self
     {
         $this->document = $document;
 
