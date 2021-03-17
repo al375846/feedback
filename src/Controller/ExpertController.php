@@ -30,12 +30,14 @@ use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 class ExpertController extends AbstractController
 {
-    #[Route('/api/expert/category/{id}', name: 'expert', methods: ['POST'])]
+    #[Route('/api/expert/category/{id}', name: 'expert_post_favcat', methods: ['POST'])]
     /**
-     * @OA\Response(response=200, description="Adds a feedback",
+     * @OA\Response(response=200, description="Adds a fav category of an expert",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="exepert", type="object", @OA\Property(property="userdata", type="object", @OA\Property(property="username", type="string"))),
-     *     @OA\Property(property="categories", type="array", @OA\Items(type="object", @OA\Property(property="id", type="integer"), @OA\Property(property="name", type="string")))
+     *     @OA\Property(property="favCategories", type="array",
+     *          @OA\Items(type="object",
+     *          @OA\Property(property="id", type="integer"), @OA\Property(property="name", type="string"), @OA\Property(property="description", type="string")))
      * ))
      * @OA\RequestBody(description="Input data format",
      *     @OA\JsonContent(type="object",
@@ -74,6 +76,47 @@ class ExpertController extends AbstractController
 
         //Serializamos para poder mandar el objeto en la respuesta
         $data = $serializer->serialize($expert, 'json', [AbstractNormalizer::GROUPS => ['fav_categories']]);
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'status'=>200,
+            'favCategories'=>json_decode($data),
+        );
+
+        return new JsonResponse($response,200);
+    }
+
+    #[Route('/api/expert/{username}/category', name: 'expert_get_favcat', methods: ['GET'])]
+    /**
+     * @OA\Response(response=200, description="Gets fav categories of an exepert",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="exepert", type="object", @OA\Property(property="userdata", type="object", @OA\Property(property="username", type="string"))),
+     *     @OA\Property(property="favCategories", type="array",
+     *          @OA\Items(type="object", schema="category",
+     *          @OA\Property(property="id", type="integer"), @OA\Property(property="name", type="string"), @OA\Property(property="description", type="string")))
+     * ))
+     * @OA\Tag(name="Experts")
+     * @Security(name="Bearer")
+     */
+    public function getFavCategory($username): Response
+    {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+
+        //Trabajamos los datos como queramos
+        $em = $this->getDoctrine()->getManager();
+        //Obetenemos el experto
+        $userdata = $this->getDoctrine()->getRepository(User::class)->findBy(['username'=>$username]);
+        $expert = $this->getDoctrine()->getRepository(Expert::class)->findBy(['userdata'=>$userdata[0]])[0];
+        //Obetemos las categorias
+        $favCat = $expert->getFavCategories();
+
+        //Serializamos para poder mandar el objeto en la respuesta
+        $data = $serializer->serialize($favCat, 'json', [AbstractNormalizer::GROUPS => ['fav_categories']]);
 
         //Puede tener los atributos que se quieran
         $response=array(
