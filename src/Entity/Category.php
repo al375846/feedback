@@ -21,7 +21,7 @@ class Category
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
      * @OA\Property(type="integer")
-     * @Groups({"publications", "categories", "feedbacks", "fav_categories"})
+     * @Groups({"categories", "fav_categories"})
      */
     private $id;
 

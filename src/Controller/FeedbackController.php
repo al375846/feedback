@@ -35,7 +35,7 @@ use Symfony\Component\HttpFoundation\HeaderUtils;
 
 class FeedbackController extends AbstractController
 {
-    #[Route('/api/feedback/{id}', name: 'feedback_post', methods: ['POST'])]
+    #[Route('/api/feedback/publication/{id}', name: 'feedback_post', methods: ['POST'])]
     /**
      * @OA\Response(response=200, description="Adds a feedback",
      *     @OA\JsonContent(type="object",
@@ -80,16 +80,16 @@ class FeedbackController extends AbstractController
         $feedback->setExpert($expert[0]);
         $em->persist($feedback);
         $em->flush();
-        $id = $this->getDoctrine()->getRepository(Feedback::class)->findBy(['publication'=>$feedback->getPublication()], ['id'=>'DESC'])[0]->getId();
+        //$id = $this->getDoctrine()->getRepository(Feedback::class)->findBy(['publication'=>$feedback->getPublication()], ['id'=>'DESC'])[0]->getId();
 
         //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($feedback, 'json', [AbstractNormalizer::GROUPS => ['feedbacks'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['id']]);
+        $data = $serializer->serialize($feedback, 'json', [AbstractNormalizer::GROUPS => ['feedbacks'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['publication']]);
 
         //Puede tener los atributos que se quieran
         $response=array(
             'status'=>200,
             'feedback'=>json_decode($data),
-            'id'=>$id
+            //'id'=>$id
         );
 
         return new JsonResponse($response,200);
