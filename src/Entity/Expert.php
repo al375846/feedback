@@ -27,12 +27,13 @@ class Expert
      * @ORM\OneToOne(targetEntity=User::class, cascade={"persist", "remove"})
      * @ORM\JoinColumn(nullable=false)
      * @OA\Property(ref=@Model(type=User::class))
-     * @Groups({"feedbacks"})
+     * @Groups({"feedbacks", "fav_categories"})
      */
     private $userdata;
 
     /**
      * @ORM\OneToMany(targetEntity=ExpertCategories::class, mappedBy="expert")
+     * @Groups({"fav_categories"})
      */
     private $favCategories;
 

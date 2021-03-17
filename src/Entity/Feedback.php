@@ -22,6 +22,7 @@ class Feedback
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
      * @OA\Property(type="integer")
+     * @Groups({"feedbacks"})
      */
     private $id;
 

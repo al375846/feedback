@@ -21,14 +21,14 @@ class Category
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
      * @OA\Property(type="integer")
-     * @Groups({"publications", "categories", "feedbacks"})
+     * @Groups({"publications", "categories", "feedbacks", "fav_categories"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=255)
      * @OA\Property(type="string", maxLength=255)
-     * @Groups({"publications", "categories", "feedbacks"})
+     * @Groups({"publications", "categories", "feedbacks", "fav_categories"})
      */
     private $name;
 

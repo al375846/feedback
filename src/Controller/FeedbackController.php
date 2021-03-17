@@ -73,13 +73,10 @@ class FeedbackController extends AbstractController
         $em = $this->getDoctrine()->getManager();
         //Obtenemos la publicacion
         $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
-        dump($publication);
         $feedback->setPublication($publication);
         //Decidimos el experto
         $userdata = $this->getDoctrine()->getRepository(User::class)->findBy(['username'=>$user->getUsername()]);
-        dump($userdata);
         $expert = $this->getDoctrine()->getRepository(Expert::class)->findBy(['userdata'=>$userdata[0]]);
-        dump($expert);
         $feedback->setExpert($expert[0]);
         $em->persist($feedback);
         $em->flush();
@@ -170,5 +167,107 @@ class FeedbackController extends AbstractController
         );
 
         return new JsonResponse($response, 200);
+    }
+
+    #[Route('/api/feedback/{id}/file', name: 'feedback_post_file', methods: ['POST'])]
+    /**
+     * @OA\Response(response=200, description="Adds a file to feedbacks",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="images", type="array", @OA\Items(type="string"))
+     * ))
+     * @OA\RequestBody(description="Input data format",
+     *     @OA\MediaType(mediaType="multipart/form-data",
+     *     @OA\Schema(
+     *     @OA\Property(property="video", type="string", format="binary"),
+     *     @OA\Property(property="document", type="string", format="binary"),
+     *     @OA\Property(property="image", type="string", format="binary")
+     *     )
+     *     )
+     * )
+     * @OA\Tag(name="Feedbacks")
+     * @Security(name="Bearer")
+     */
+    public function postFeedbackFile($id, Request $request, UploaderService $uploaderService): Response {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Obtenemos la publicacion
+        $feedback = $this->getDoctrine()->getRepository(Feedback::class)->find($id);
+
+        //Subimos los archivos
+        $images = $feedback->getImages();
+        $document = $feedback->getDocument();
+        $video = $feedback->getVideo();
+        foreach($request->files->getIterator() as $file) {
+            $filename = $uploaderService->upload($file);
+            $arrayfile = explode(".", $filename);
+            $extension = $arrayfile[count($arrayfile) - 1];
+            if ($extension == "pdf") {
+                $document[count($document)] = $filename;
+            }
+            elseif ($extension == "mp4") {
+                $video[count($video)] = $filename;
+            }
+            elseif ($extension == "jpg" or $extension == "jpeg" or $extension == "png") {
+                $images[count($images)] = $filename;
+            }
+        }
+        $feedback->setVideo($video);
+        $feedback->setDocument($document);
+        $feedback->setImages($images);
+
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($feedback);
+        $em->flush();
+
+        //Serializamos para poder mandar el objeto en la respuesta
+        $data = $serializer->serialize($feedback, 'json', [AbstractNormalizer::ATTRIBUTES => ['video', 'document', 'images']]);
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'status'=>200,
+            'feedback'=>json_decode($data)
+        );
+
+        return new JsonResponse($response, 200);
+    }
+
+    #[Route('/api/feedback/file/{filename}', name: 'feedback_get_file', methods: ['GET'])]
+    /**
+     * @OA\Response(response=200, description="Gets a file from a feedback",
+     *     @OA\MediaType(mediaType="application/pdf",
+     *     @OA\Schema(@OA\Property(property="document", type="string", format="binary"))),
+     *     @OA\MediaType(mediaType="image/png",
+     *     @OA\Schema(@OA\Property(property="image", type="string", format="binary"))),
+     *     @OA\MediaType(mediaType="image/jpg",
+     *     @OA\Schema(@OA\Property(property="image", type="string", format="binary"))),
+     *     @OA\MediaType(mediaType="image/jpeg",
+     *     @OA\Schema(@OA\Property(property="image", type="string", format="binary"))),
+     *     @OA\MediaType(mediaType="video/mp4",
+     *     @OA\Schema(@OA\Property(property="video", type="string", format="binary"))),
+     * )
+     * @OA\Tag(name="Feedbacks")
+     * @Security(name="Bearer")
+     */
+    public function getFeedbackFile($filename) {
+        $root = $this->getParameter('kernel.project_dir');
+        $finder = new Finder();
+        $finder->files()->in($root)->name($filename);
+        $filesend = null;
+        foreach ($finder as $file) {
+            $filesend = $file->getRealPath();
+        }
+        $response = new BinaryFileResponse($filesend);
+        $disposition = HeaderUtils::makeDisposition(
+            HeaderUtils::DISPOSITION_ATTACHMENT,
+            $filename
+        );
+        $response->headers->set('Content-Disposition', $disposition);
+        return $response;
     }
 }
