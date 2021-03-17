@@ -39,8 +39,7 @@ class ExpertController extends AbstractController
      * ))
      * @OA\RequestBody(description="Input data format",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="username", type="string"),
-     *     @OA\Property(property="name", type="string")
+     *     @OA\Property(property="username", type="string")
      * ))
      * @OA\Tag(name="Experts")
      * @Security(name="Bearer")
