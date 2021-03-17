@@ -30,7 +30,7 @@ use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 class ExpertController extends AbstractController
 {
-    #[Route('/api/expert/category/{id}', name: 'expert_post_favcat', methods: ['POST'])]
+    #[Route('/api/expert/{username}/category/{id}', name: 'expert_post_favcat', methods: ['POST'])]
     /**
      * @OA\Response(response=200, description="Adds a fav category of an expert",
      *     @OA\JsonContent(type="object",
@@ -39,14 +39,10 @@ class ExpertController extends AbstractController
      *          @OA\Items(type="object",
      *          @OA\Property(property="id", type="integer"), @OA\Property(property="name", type="string"), @OA\Property(property="description", type="string")))
      * ))
-     * @OA\RequestBody(description="Input data format",
-     *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="username", type="string")
-     * ))
      * @OA\Tag(name="Experts")
      * @Security(name="Bearer")
      */
-    public function postFavCategory($id, Request $request): Response
+    public function postFavCategory($username, $id, Request $request): Response
     {
         //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
         $encoders = [new XmlEncoder(), new JsonEncoder()];
@@ -63,7 +59,7 @@ class ExpertController extends AbstractController
         //Obtenemos la categoria
         $cat = $this->getDoctrine()->getRepository(Category::class)->find($id);
         //Obetenemos el experto
-        $userdata = $this->getDoctrine()->getRepository(User::class)->findBy(['username'=>$user->getUsername()]);
+        $userdata = $this->getDoctrine()->getRepository(User::class)->findBy(['username'=>$username]);
         $expert = $this->getDoctrine()->getRepository(Expert::class)->findBy(['userdata'=>$userdata[0]])[0];
         //Añadimos la categoria
         $favCat = new ExpertCategories();
