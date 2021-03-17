@@ -50,10 +50,6 @@ class ExpertController extends AbstractController
         $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Deserializamos para obtener los datos del objeto
-        $user = $serializer->deserialize($request->getContent(), User::class, 'json', [AbstractNormalizer::ATTRIBUTES => ['username']]);
-        $category = $serializer->deserialize($request->getContent(), Category::class, 'json', [AbstractNormalizer::ATTRIBUTES => ['name']]);
-
         //Trabajamos los datos como queramos
         $em = $this->getDoctrine()->getManager();
         //Obtenemos la categoria
