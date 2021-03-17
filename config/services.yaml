@@ -32,3 +32,11 @@ services:
     App\Service\UploaderService:
         arguments:
             $targetDirectory: '%files_directory%'
+
+    Aws\S3\S3Client:
+        arguments:
+              version: 'latest'
+              region: "eu-west-3"
+              credentials:
+                  key: "%env(AWS_S3_ACCESS_ID)%"
+                  secret: "%env(AWS_S3_ACCESS_SECRET)%"
