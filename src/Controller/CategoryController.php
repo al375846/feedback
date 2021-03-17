@@ -98,6 +98,7 @@ class CategoryController extends AbstractController
 
     #[Route('/api/category', name: 'categories_get', methods: ['GET'])]
     /**
+     * @Route("/api/category", name="categories_get", methods={"GET"})
      * @OA\Response(response=200, description="Adds a category",
      *     @OA\JsonContent(type="array",@OA\Items(
      *     @OA\Property(property="id", type="integer"),
