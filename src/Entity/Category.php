@@ -35,7 +35,7 @@ class Category
     /**
      * @ORM\Column(type="text")
      * @OA\Property(type="string")
-     * @Groups({"categories"})
+     * @Groups({"categories", "fav_categories"})
      */
     private $description;
 
