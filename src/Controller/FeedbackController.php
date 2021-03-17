@@ -35,11 +35,8 @@ use Symfony\Component\HttpFoundation\HeaderUtils;
 
 class FeedbackController extends AbstractController
 {
-    #[Route('/api/feedback', name: 'feedback_post', methods: ['POST'])]
+    #[Route('/api/feedback/{id}', name: 'feedback_post', methods: ['POST'])]
     /**
-     * @OA\Parameter(name="publication", in="query", description="Publication id", required=true,
-     *     @OA\Schema(type="integer")
-     * )
      * @OA\Response(response=200, description="Adds a feedback",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="name", type="string"),
@@ -60,7 +57,7 @@ class FeedbackController extends AbstractController
      * @OA\Tag(name="Feedbacks")
      * @Security(name="Bearer")
      */
-    public function postFeedback(Request $request): Response
+    public function postFeedback($id, Request $request): Response
     {
         //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
         $encoders = [new XmlEncoder(), new JsonEncoder()];
@@ -75,7 +72,7 @@ class FeedbackController extends AbstractController
         //Trabajamos los datos como queramos
         $em = $this->getDoctrine()->getManager();
         //Obtenemos la publicacion
-        $publication = $this->getDoctrine()->getRepository(Publication::class)->find($request->query->get('publication'));
+        $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
         dump($publication);
         $feedback->setPublication($publication);
         //Decidimos el experto
