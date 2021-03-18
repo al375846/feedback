@@ -8,9 +8,12 @@ use App\Entity\Tag;
 use App\Service\UploaderService;
 use App\Entity\User;
 use App\Entity\Publication;
+use Aws\S3\S3Client;
+use GuzzleHttp\Psr7\Stream;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Nelmio\ApiDocBundle\Annotation\Model;
@@ -226,20 +229,35 @@ class PublicationController extends AbstractController
      * @OA\Tag(name="Publications")
      * @Security(name="Bearer")
      */
-    public function getPublicationFile($filename) {
-        $root = $this->getParameter('kernel.project_dir');
-        $finder = new Finder();
-        $finder->files()->in($root)->name($filename);
-        $filesend = null;
-        foreach ($finder as $file) {
-            $filesend = $file->getRealPath();
-        }
-        $response = new BinaryFileResponse($filesend);
+    public function getPublicationFile($filename, S3Client $s3Client) {
+        $tipos = array(
+            "pdf"  => "application/pdf",
+            "jpeg"  => "image/jpeg",
+            "jpg"  => "image/jpg",
+            "png"  => "image/png",
+            "mp4"  => "video/mp4",
+        );
+        $arrayfile = explode(".", $filename);
+        $extension = $arrayfile[count($arrayfile) - 1];
         $disposition = HeaderUtils::makeDisposition(
             HeaderUtils::DISPOSITION_ATTACHMENT,
             $filename
         );
+        $result = $s3Client->getObject([
+            'Bucket' => 'feedback-uji',
+            'Key' => 'files/'. $filename,
+            'ResponseContentType' => $tipos[$extension],
+            'ResponseContentDisposition' => $disposition,
+        ]);
+        dump($result);
+        $stream = $result['Body']->detach();
+        dump($stream);
+        $response = new StreamedResponse(function() use ($stream) {
+            $outputStream = fopen('php://output', 'wb');
+            stream_copy_to_stream($stream, $outputStream);
+        });
         $response->headers->set('Content-Disposition', $disposition);
+        $response->headers->set('Content-Type', $tipos[$extension]);
         return $response;
     }
 
