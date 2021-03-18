@@ -32,17 +32,20 @@ class ApprenticeController extends AbstractController
 {
     #[Route('/api/apprentice/{username}/publication', name: 'apprentice_get_publication', methods: ['GET'])]
     /**
-     * @OA\Response(response=200, description="Gets a publication",
-     *     @OA\JsonContent(type="object",
+     * @Route("/api/apprentice/{username}/publication", name="apprentice_get_publication", methods={"GET"})
+     * @OA\Response(response=200, description="Gets alls publications of an apprentice",
+     *     @OA\JsonContent(type="array", @OA\Items(type="object",
+     *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="title", type="string"),
-     *     @OA\Property(property="category", type="object", @OA\Property(property="name", type="string")),
+     *     @OA\Property(property="category", type="object",
+     *          @OA\Property(property="name", type="string")),
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="tags", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="video", type="string"),
      *     @OA\Property(property="document", type="string"),
      *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="date", type="string", format="date-time")
-     * ))
+     * )))
      * @OA\Tag(name="Apprentices")
      * @Security(name="Bearer")
      */
@@ -51,22 +54,24 @@ class ApprenticeController extends AbstractController
         //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
         $serializer = new Serializer($normalizers, $encoders);
 
         //Trabajamos los datos como queramos
+        $doctrine = $this->getDoctrine();
         //Obtenemos al aprendiz
-        $user = $this->getDoctrine()->getRepository(User::class)->findBy(['username'=>$username]);
-        $apprentice = $this->getDoctrine()->getRepository(Apprentice::class)->findBy(['userdata'=>$user]);
+        $user = $doctrine->getRepository(User::class)->findBy(['username'=>$username])[0];
+        $apprentice = $doctrine->getRepository(Apprentice::class)->findBy(['userdata'=>$user])[0];
         //Obtenemos las publicaciones
-        $publications = $this->getDoctrine()->getRepository(Publication::class)->findBy(['apprentice'=>$apprentice]);
+        $publications = $doctrine->getRepository(Publication::class)->findBy(['apprentice'=>$apprentice]);
 
         //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($publications, 'json', [AbstractNormalizer::GROUPS => ['publications'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['apprentice']]);
+        $data = $serializer->serialize($publications, 'json',
+            [AbstractNormalizer::GROUPS => ['publications'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['apprentice']]);
 
         //Puede tener los atributos que se quieran
         $response=array(
-            'status'=>200,
             'publications'=>json_decode($data)
         );
 
