@@ -33,7 +33,8 @@ class CategoryController extends AbstractController
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="name", type="string"),
      *     @OA\Property(property="description", type="string"),
-     *     @OA\Property(property="parent", type="object", @OA\Property(property="name", type="string"), nullable="true"),
+     *     @OA\Property(property="parent", type="object", nullable="true",
+     *          @OA\Property(property="name", type="string"))
      * ))
      * @OA\Response(response=400, description="Error while adding",
      *     @OA\JsonContent(type="object",
@@ -43,7 +44,8 @@ class CategoryController extends AbstractController
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="name", type="string"),
      *     @OA\Property(property="description", type="string"),
-     *     @OA\Property(property="parent", type="object", @OA\Property(property="name", type="string"), nullable="true"),
+     *     @OA\Property(property="parent", type="object", nullable="true",
+     *          @OA\Property(property="name", type="string")),
      *     @OA\Property(property="username", type="string"),
      * ))
      * @OA\Tag(name="Categories")
@@ -54,18 +56,25 @@ class CategoryController extends AbstractController
         //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
         $serializer = new Serializer($normalizers, $encoders);
 
         //Deserializamos para obtener los datos del objeto
-        $category = $serializer->deserialize($request->getContent(), Category::class, 'json', [AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']]);
-        $user = $serializer->deserialize($request->getContent(), User::class, 'json', [AbstractNormalizer::IGNORED_ATTRIBUTES => ['name', 'description', 'parent']]);
+        $category = $serializer->deserialize($request->getContent(), Category::class, 'json',
+            [AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']]);
+
+        $user = $serializer->deserialize($request->getContent(), User::class, 'json',
+            [AbstractNormalizer::IGNORED_ATTRIBUTES => ['name', 'description', 'parent']]);
 
         //Trabajamos los datos como queramos
-        $em = $this->getDoctrine()->getManager();
+        $doctrine = $this->getDoctrine();
+        $em = $doctrine->getManager();
+        //Obtenemos el usuario
         $username = $user->getUsername();
-        $user = $this->getDoctrine()->getRepository(User::class)->findBy(['username'=>$username], null);
-        $roles = $user[0]->getRoles();
+        $user = $doctrine->getRepository(User::class)->findBy(['username'=>$username])[0];
+        //Comprobamos que sea admin
+        $roles = $user->getRoles();
         if (!in_array("ROLE_ADMIN", $roles)) {
             $response=array(
                 'status'=>400,
@@ -73,24 +82,24 @@ class CategoryController extends AbstractController
             );
             return new JsonResponse($response,400);
         }
-        $parent = null;
+        //Obtenemos la categoria padre
         $parentName = $category->getParent();
-        $category->setParent(null);
+        //$category->setParent(null);
         if($parentName != null) {
             $parentName = $parentName->getName();
-            $parent = $this->getDoctrine()->getRepository(Category::class)->findBy(['name'=>$parentName], null);
-            $category->setParent($parent[0]);
+            $parent = $doctrine->getRepository(Category::class)->findBy(['name'=>$parentName])[0];
+            $category->setParent($parent);
         }
         $em->persist($category);
         $em->flush();
 
         //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($category, 'json', [AbstractNormalizer::GROUPS => ['categories']]);
+        $data = $serializer->serialize($category, 'json',
+            [AbstractNormalizer::GROUPS => ['categories']]);
 
         //Puede tener los atributos que se quieran
         $response=array(
-            'status'=>200,
-            'publication'=>json_decode($data)
+            'category'=>json_decode($data)
         );
 
         return new JsonResponse($response,200);
@@ -99,13 +108,16 @@ class CategoryController extends AbstractController
     #[Route('/api/category', name: 'categories_get', methods: ['GET'])]
     /**
      * @Route("/api/category", name="categories_get", methods={"GET"})
-     * @OA\Response(response=200, description="Adds a category",
+     * @OA\Response(response=200, description="Gets all categories",
      *     @OA\JsonContent(type="array",@OA\Items(
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="name", type="string"),
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="children", type="array",
-     *     @OA\Items(type="object", @OA\Property(property="id", type="integer"), @OA\Property(property="name", type="string"), @OA\Property(property="description", type="string")))
+     *     @OA\Items(type="object",
+     *          @OA\Property(property="id", type="integer"),
+     *          @OA\Property(property="name", type="string"),
+     *          @OA\Property(property="description", type="string")))
      * )))
      * @OA\Tag(name="Categories")
      * @Security(name="Bearer")
@@ -115,7 +127,8 @@ class CategoryController extends AbstractController
         //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
         $serializer = new Serializer($normalizers, $encoders);
 
         //Trabajamos los datos como queramos

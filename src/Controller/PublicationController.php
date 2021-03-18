@@ -79,13 +79,10 @@ class PublicationController extends AbstractController
 
         //Deserializamos para obtener los datos del objeto
         $publication = $serializer->deserialize($request->getContent(),
-            Publication::class, 'json', [AbstractNormalizer::IGNORED_ATTRIBUTES => ['username', 'tags']]);
+            Publication::class, 'json', [AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']]);
 
         $user = $serializer->deserialize($request->getContent(),
             User::class, 'json', [AbstractNormalizer::ATTRIBUTES => ['username']]);
-
-        $tags = $serializer->deserialize($request->getContent(),
-            Tag::class,  'json', [AbstractNormalizer::ATTRIBUTES => ['tags']]);
 
         //Trabajamos los datos como queramos
         $doctrine = $this->getDoctrine();
@@ -100,11 +97,6 @@ class PublicationController extends AbstractController
         $userdata = $doctrine->getRepository(User::class)->findBy(['username'=>$user->getUsername()])[0];
         $apprentice = $doctrine->getRepository(Apprentice::class)->findBy(['userdata'=>$userdata])[0];
         $publication->setApprentice($apprentice);
-
-        //Establecemos las etiquetas
-        $tagspu = $tags->getTags();
-        $tagspu = explode(" ", $tagspu);
-        $publication->setTags($tagspu);
 
         //Guardamos la publicacion
         $em->persist($publication);
