@@ -28,6 +28,7 @@ class CategoryController extends AbstractController
 {
     #[Route('/api/category', name: 'category_post', methods: ['POST'])]
     /**
+     * @Route("/api/category", name="category_post", methods={"POST"})
      * @OA\Response(response=200, description="Adds a category",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="id", type="integer"),
