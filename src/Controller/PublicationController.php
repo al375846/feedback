@@ -61,7 +61,7 @@ class PublicationController extends AbstractController
      *     @OA\Property(property="category", type="object",
      *          @OA\Property(property="name", type="string")),
      *     @OA\Property(property="description", type="string"),
-     *     @OA\Property(property="tags", type="string"),
+     *     @OA\Property(property="tags", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="username", type="string"),
      *     @OA\Property(property="date", type="string", format="date-time")
      * ))
