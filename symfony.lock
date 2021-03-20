@@ -111,9 +111,6 @@
     "guzzlehttp/psr7": {
         "version": "1.7.0"
     },
-    "heroku/heroku-buildpack-php": {
-        "version": "v190"
-    },
     "laminas/laminas-code": {
         "version": "4.0.0"
     },
