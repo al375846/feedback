@@ -251,7 +251,7 @@ class PublicationController extends AbstractController
             ob_flush();
             flush();
         });
-        $response->headers->set('Content-Type', $tipos[$extension]);
+        $response->headers->set('content-type', $tipos[$extension]);
         $response->headers->set('Content-Disposition', $disposition);
 
         return $response;
