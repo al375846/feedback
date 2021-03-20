@@ -242,15 +242,18 @@ class PublicationController extends AbstractController
             'ResponseContentType' => $tipos[$extension],
             'ResponseContentDisposition' => $disposition,
         ]);
-        dump($result);
+
         $stream = $result['Body']->detach();
-        dump($stream);
+
         $response = new StreamedResponse(function() use ($stream) {
             $outputStream = fopen('php://output', 'wb');
             stream_copy_to_stream($stream, $outputStream);
+            ob_flush();
+            flush();
         });
-        $response->headers->set('Content-Disposition', $disposition);
         $response->headers->set('Content-Type', $tipos[$extension]);
+        $response->headers->set('Content-Disposition', $disposition);
+
         return $response;
     }
 
