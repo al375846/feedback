@@ -2,6 +2,8 @@
 
 namespace App\DataFixtures;
 
+use App\Entity\Apprentice;
+use App\Entity\Expert;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
@@ -42,7 +44,9 @@ class UserFixtures extends Fixture
         $user2->setAddress("C/ Que tal");
         $user2->setPhone("777777777");
         $manager->persist($user2);
-
+        $expert = new Expert();
+        $expert->setUserdata($user2);
+        $manager->persist($expert);
         //Aprendiz
         $user3 = new User();
         $user3->setUsername('jaumeba');
@@ -55,6 +59,9 @@ class UserFixtures extends Fixture
         $user3->setAddress("C/ Genial");
         $user3->setPhone("555555555");
         $manager->persist($user3);
+        $apprentice = new Apprentice();
+        $apprentice->setUserdata($user2);
+        $manager->persist($apprentice);
 
         $manager->flush();
     }
