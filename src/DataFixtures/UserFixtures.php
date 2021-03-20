@@ -60,7 +60,7 @@ class UserFixtures extends Fixture
         $user3->setPhone("555555555");
         $manager->persist($user3);
         $apprentice = new Apprentice();
-        $apprentice->setUserdata($user2);
+        $apprentice->setUserdata($user3);
         $manager->persist($apprentice);
 
         $manager->flush();

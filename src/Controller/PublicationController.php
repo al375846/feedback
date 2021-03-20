@@ -222,6 +222,7 @@ class PublicationController extends AbstractController
      * @Security(name="Bearer")
      */
     public function getPublicationFile($filename, S3Client $s3Client) {
+        dump($filename);
         $tipos = array(
             "pdf"  => "application/pdf",
             "jpeg"  => "image/jpeg",
