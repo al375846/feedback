@@ -222,7 +222,6 @@ class PublicationController extends AbstractController
      * @Security(name="Bearer")
      */
     public function getPublicationFile($filename, S3Client $s3Client) {
-        dump($filename);
         $tipos = array(
             "pdf"  => "application/pdf",
             "jpeg"  => "image/jpeg",
@@ -251,7 +250,8 @@ class PublicationController extends AbstractController
             ob_flush();
             flush();
         });
-        $response->headers->set('content-type', $tipos[$extension]);
+
+        $response->headers->set('Content-Type', $tipos[$extension]);
         $response->headers->set('Content-Disposition', $disposition);
 
         return $response;
