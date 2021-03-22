@@ -28,7 +28,7 @@ class Publication
     /**
      * @ORM\Column(type="string", length=255)
      * @OA\Property(type="string", maxLength=255)
-     * @Groups({"publications", "feedbacks"})
+     * @Groups({"publications"})
      */
     private $title;
 
@@ -36,21 +36,21 @@ class Publication
      * @ORM\ManyToOne(targetEntity=Category::class)
      * @ORM\JoinColumn(nullable=false)
      * @OA\Property(ref=@Model(type=Category::class))
-     * @Groups({"publications", "feedbacks"})
+     * @Groups({"publications"})
      */
     private $category;
 
     /**
      * @ORM\Column(type="text")
      * @OA\Property(type="string")
-     * @Groups({"publications", "feedbacks"})
+     * @Groups({"publications"})
      */
     private $description;
 
     /**
      * @ORM\Column(type="array", nullable=true)
      * @OA\Property(type="array", @OA\Items(type="string"))
-     * @Groups({"publications", "feedbacks"})
+     * @Groups({"publications"})
      */
     private $tags = [];
 

@@ -31,13 +31,16 @@ class CategoryController extends AbstractController
      * @Route("/api/category", name="category_post", methods={"POST"})
      * @OA\Response(response=200, description="Adds a category",
      *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="category", type="object",
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="name", type="string"),
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="parent", type="object", nullable="true",
-     *          @OA\Property(property="name", type="string"))
-     * ))
-     * @OA\Response(response=400, description="Error while adding",
+     *          @OA\Property(property="id", type="integer"),
+     *          @OA\Property(property="name", type="string"),
+     *          @OA\Property(property="description", type="string"))
+     * )))
+     * @OA\Response(response=401, description="Usuario no autorizado",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="error", type="string")
      * ))
@@ -78,10 +81,9 @@ class CategoryController extends AbstractController
         $roles = $user->getRoles();
         if (!in_array("ROLE_ADMIN", $roles)) {
             $response=array(
-                'status'=>400,
                 'publication'=>'Error: El usuario no es administrador, no puede añadir categorias'
             );
-            return new JsonResponse($response,400);
+            return new JsonResponse($response,401);
         }
         //Obtenemos la categoria padre
         $parentName = $category->getParent();
@@ -110,7 +112,8 @@ class CategoryController extends AbstractController
     /**
      * @Route("/api/category", name="categories_get", methods={"GET"})
      * @OA\Response(response=200, description="Gets all categories",
-     *     @OA\JsonContent(type="array",@OA\Items(
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="categories", type="array", @OA\Items(
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="name", type="string"),
      *     @OA\Property(property="description", type="string"),
@@ -119,7 +122,7 @@ class CategoryController extends AbstractController
      *          @OA\Property(property="id", type="integer"),
      *          @OA\Property(property="name", type="string"),
      *          @OA\Property(property="description", type="string")))
-     * )))
+     * ))))
      * @OA\Tag(name="Categories")
      * @Security(name="Bearer")
      */
@@ -141,7 +144,6 @@ class CategoryController extends AbstractController
 
         //Puede tener los atributos que se quieran
         $response=array(
-            'status'=>200,
             'categories'=>json_decode($data)
         );
 

@@ -31,13 +31,10 @@ class ExpertController extends AbstractController
      * @Route("/api/expert/{username}/category/{id}", name="expert_post_favcat", methods={"POST"})
      * @OA\Response(response=200, description="Adds a fav category of an expert",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="exepert", type="object",
-     *          @OA\Property(property="userdata", type="object",
-     *              @OA\Property(property="username", type="string"))),
-     *     @OA\Property(property="favCategories", type="array", @OA\Items(type="object",
+     *     @OA\Property(property="favCategory", type="object",
      *          @OA\Property(property="id", type="integer"),
      *          @OA\Property(property="name", type="string"),
-     *          @OA\Property(property="description", type="string")))
+     *          @OA\Property(property="description", type="string"))
      * ))
      * @OA\Tag(name="Experts")
      * @Security(name="Bearer")
@@ -69,12 +66,12 @@ class ExpertController extends AbstractController
         $em->flush();
 
         //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($expert, 'json',
+        $data = $serializer->serialize($favCat, 'json',
             [AbstractNormalizer::GROUPS => ['fav_categories']]);
 
         //Puede tener los atributos que se quieran
         $response=array(
-            'favCategories'=>json_decode($data),
+            'favCategory'=>json_decode($data),
         );
 
         return new JsonResponse($response,200);
@@ -85,9 +82,6 @@ class ExpertController extends AbstractController
      * @Route("/api/expert/{username}/category", name="expert_get_favcat", methods={"GET"})
      * @OA\Response(response=200, description="Gets fav categories of an exepert",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="exepert", type="object",
-     *          @OA\Property(property="userdata", type="object",
-     *          @OA\Property(property="username", type="string"))),
      *     @OA\Property(property="favCategories", type="array",
      *          @OA\Items(type="object", schema="category",
      *          @OA\Property(property="id", type="integer"),
@@ -110,8 +104,8 @@ class ExpertController extends AbstractController
         //Trabajamos los datos como queramos
         $doctrine = $this->getDoctrine();
         //Obetenemos el experto
-        $userdata = $doctrine->getRepository(User::class)->findBy(['username'=>$username]);
-        $expert = $doctrine->getRepository(Expert::class)->findBy(['userdata'=>$userdata[0]])[0];
+        $userdata = $doctrine->getRepository(User::class)->findBy(['username'=>$username])[0];
+        $expert = $doctrine->getRepository(Expert::class)->findBy(['userdata'=>$userdata])[0];
         //Obetemos las categorias
         $favCat = $expert->getFavCategories();
 

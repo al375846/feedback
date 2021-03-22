@@ -41,6 +41,7 @@ class PublicationController extends AbstractController
      * @Route("/api/publication", name="publication_post", methods={"POST"})
      * @OA\Response(response=200, description="Adds a publication",
      *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="publication", type="object",
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="title", type="string"),
      *     @OA\Property(property="category", type="object",
@@ -54,7 +55,7 @@ class PublicationController extends AbstractController
      *          @OA\Property(property="userdata", type="object",
      *              @OA\Property(property="username", type="string"))),
      *     @OA\Property(property="date", type="string", format="date-time")
-     * ))
+     * )))
      * @OA\RequestBody(description="Input data format",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="title", type="string"),
@@ -118,21 +119,22 @@ class PublicationController extends AbstractController
     /**
      * @Route("/api/publication", name="publication_get", methods={"GET"})
      * @OA\Response(response=200, description="Gets all publications",
-     *     @OA\JsonContent(type="array", @OA\Items(
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="publications", type="array", @OA\Items(
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="title", type="string"),
      *     @OA\Property(property="category", type="object",
      *          @OA\Property(property="name", type="string")),
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="tags", type="array", @OA\Items(type="string")),
-     *     @OA\Property(property="video", type="string"),
-     *     @OA\Property(property="document", type="string"),
+     *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="apprentice", type="object",
      *          @OA\Property(property="userdata", type="object",
      *              @OA\Property(property="username", type="string"))),
      *     @OA\Property(property="date", type="string", format="date-time")
-     * )))
+     * ))))
      * @OA\Tag(name="Publications")
      * @Security(name="Bearer")
      */
@@ -164,6 +166,7 @@ class PublicationController extends AbstractController
      * @Route("/api/publication/{id}", name="publication_get_id", methods={"GET"})
      * @OA\Response(response=200, description="Gets a publication",
      *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="publication", type="object",
      *     @OA\Property(property="title", type="string"),
      *     @OA\Property(property="category", type="object",
      *          @OA\Property(property="name", type="string")),
@@ -176,7 +179,7 @@ class PublicationController extends AbstractController
      *          @OA\Property(property="userdata", type="object",
      *              @OA\Property(property="username", type="string"))),
      *     @OA\Property(property="date", type="string", format="date-time")
-     * ))
+     * )))
      * @OA\Tag(name="Publications")
      * @Security(name="Bearer")
      */
@@ -262,19 +265,18 @@ class PublicationController extends AbstractController
      * @Route("/api/publication/{id}/file", name="publication_post_file", methods={"POST"})
      * @OA\Response(response=200, description="Adds a file to publication",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="video", type="string"),
-     *     @OA\Property(property="document", type="string"),
+     *     @OA\Property(property="publication", type="object",
+     *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="images", type="array", @OA\Items(type="string"))
-     * ))
+     * )))
      * @OA\RequestBody(description="Input data format",
      *     @OA\MediaType(mediaType="multipart/form-data",
      *     @OA\Schema(
      *     @OA\Property(property="video", type="string", format="binary"),
      *     @OA\Property(property="document", type="string", format="binary"),
      *     @OA\Property(property="image", type="string", format="binary")
-     *     )
-     *     )
-     * )
+     *     )))
      * @OA\Tag(name="Publications")
      * @Security(name="Bearer")
      */

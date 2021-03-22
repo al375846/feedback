@@ -34,7 +34,8 @@ class ApprenticeController extends AbstractController
     /**
      * @Route("/api/apprentice/{username}/publication", name="apprentice_get_publication", methods={"GET"})
      * @OA\Response(response=200, description="Gets alls publications of an apprentice",
-     *     @OA\JsonContent(type="array", @OA\Items(type="object",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="publications", type="array", @OA\Items(type="object",
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="title", type="string"),
      *     @OA\Property(property="category", type="object",
@@ -45,7 +46,7 @@ class ApprenticeController extends AbstractController
      *     @OA\Property(property="document", type="string"),
      *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="date", type="string", format="date-time")
-     * )))
+     * ))))
      * @OA\Tag(name="Apprentices")
      * @Security(name="Bearer")
      */
