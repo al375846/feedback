@@ -108,7 +108,7 @@ class FeedbackController extends AbstractController
 
         //Serializamos para poder mandar el objeto en la respuesta
         $data = $serializer->serialize($feedback, 'json',
-            [AbstractNormalizer::GROUPS => ['feedbacks'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['publication']]);
+            [AbstractNormalizer::GROUPS => ['feedbacks']]);
 
         //Puede tener los atributos que se quieran
         $response=array(
@@ -150,7 +150,7 @@ class FeedbackController extends AbstractController
         $feedbacks = $this->getDoctrine()->getRepository(Feedback::class)->findAll();
         //Serializamos para poder mandar el objeto en la respuesta
         $data = $serializer->serialize($feedbacks, 'json',
-            [AbstractNormalizer::GROUPS => ['feedbacks']]);
+            [AbstractNormalizer::GROUPS => ['feedbacks'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['publication']]);
 
         //Puede tener los atributos que se quieran
         $response=array(

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Apprentice;
 use App\Entity\Category;
+use App\Entity\Feedback;
 use App\Service\UploaderService;
 use App\Entity\User;
 use App\Entity\Publication;
@@ -353,5 +354,62 @@ class PublicationController extends AbstractController
         );
 
         return new JsonResponse($response, 200);
+    }
+
+    #[Route('/api/publication/{id}/feedback', name: 'feedback_publication_get', methods: ['GET'])]
+    /**
+     * @Route("/api/publication/{id}/feedback", name="feedback_publication_get", methods={"GET"})
+     * @OA\Response(response=200, description="Gets all feedbacks from a publication",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="feedbacks", type="array", @OA\Items(type="object",
+     *     @OA\Property(property="id", type="string"),
+     *     @OA\Property(property="exepert", type="object",
+     *          @OA\Property(property="userdata", type="object",
+     *          @OA\Property(property="username", type="string"))),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="valoration", type="object",
+     *          @OA\Property(property="grade", type="integer")),
+     *     @OA\Property(property="date", type="string", format="date-time")
+     * ))))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Tag(name="Publications")
+     * @Security(name="Bearer")
+     */
+    public function getPublicationFeedback($id): Response
+    {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Trabajamos los datos como queramos
+        $doctrine = $this->getDoctrine();
+        $em = $doctrine->getManager();
+        //Obtenemos la publicacion
+        $publication = $doctrine->getRepository(Publication::class)->find($id);
+        if ($publication == null) {
+            $response=array('error'=>'Publicacion no existe');
+            return new JsonResponse($response,404);
+        }
+        $feedbacks = $doctrine->getRepository(Feedback::class)->findBy(['publication' => $publication]);
+
+        //Serializamos para poder mandar el objeto en la respuesta
+        $data = $serializer->serialize($feedbacks, 'json',
+            [AbstractNormalizer::GROUPS => ['feedbacks'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['publication']]);
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'feedbacks'=>json_decode($data),
+        );
+
+        return new JsonResponse($response,200);
     }
 }
