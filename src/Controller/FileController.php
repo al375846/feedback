@@ -70,13 +70,17 @@ class FileController extends AbstractController
             HeaderUtils::DISPOSITION_ATTACHMENT,
             $filename
         );
+        try {
         $result = $s3Client->getObject([
             'Bucket' => 'feedback-uji',
             'Key' => 'files/'. $filename,
             'ResponseContentType' => $tipos[$extension],
             'ResponseContentDisposition' => $disposition,
         ]);
-
+        } catch (\Throwable $e) {
+            $response=array('error'=>'Archivo no existe');
+            return new JsonResponse($response,404);
+        }
         $stream = $result['Body']->detach();
 
         $response = new StreamedResponse(function() use ($stream) {

@@ -47,6 +47,10 @@ class ApprenticeController extends AbstractController
      *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="date", type="string", format="date-time")
      * ))))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
      * @OA\Tag(name="Apprentices")
      * @Security(name="Bearer")
      */
@@ -62,8 +66,13 @@ class ApprenticeController extends AbstractController
         //Trabajamos los datos como queramos
         $doctrine = $this->getDoctrine();
         //Obtenemos al aprendiz
+        try {
         $user = $doctrine->getRepository(User::class)->findBy(['username'=>$username])[0];
         $apprentice = $doctrine->getRepository(Apprentice::class)->findBy(['userdata'=>$user])[0];
+        } catch (\Throwable $e) {
+            $response=array('error'=>'Usuario no existe');
+            return new JsonResponse($response,404);
+        }
         //Obtenemos las publicaciones
         $publications = $doctrine->getRepository(Publication::class)->findBy(['apprentice'=>$apprentice]);
 

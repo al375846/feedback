@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Entity\Apprentice;
 use App\Entity\Category;
-use App\Entity\Tag;
 use App\Service\UploaderService;
 use App\Entity\User;
 use App\Entity\Publication;
@@ -29,8 +28,6 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
 use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 
@@ -56,6 +53,10 @@ class PublicationController extends AbstractController
      *              @OA\Property(property="username", type="string"))),
      *     @OA\Property(property="date", type="string", format="date-time")
      * )))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
      * @OA\RequestBody(description="Input data format",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="title", type="string"),
@@ -90,15 +91,24 @@ class PublicationController extends AbstractController
         $em = $doctrine->getManager();
 
         //Decidimos la categoria
+        try{
         $catName = $publication->getCategory()->getName();
         $category = $doctrine->getRepository(Category::class)->findBy(['name'=>$catName])[0];
         $publication->setCategory($category);
+        } catch (\Throwable $e) {
+            $response=array('error'=>'Categoria no encontrada');
+            return new JsonResponse($response,404);
+        }
 
         //Decidimos el aprendiz
-        $userdata = $doctrine->getRepository(User::class)->findBy(['username'=>$user->getUsername()])[0];
-        $apprentice = $doctrine->getRepository(Apprentice::class)->findBy(['userdata'=>$userdata])[0];
+        try {
+        $userdata = $doctrine->getRepository(User::class)->findBy(['username' => $user->getUsername()])[0];
+        $apprentice = $doctrine->getRepository(Apprentice::class)->findBy(['userdata' => $userdata])[0];
         $publication->setApprentice($apprentice);
-
+        } catch (\Throwable $e) {
+            $response=array('error'=>'Aprendiz no encontrado');
+            return new JsonResponse($response,404);
+        }
         //Guardamos la publicacion
         $em->persist($publication);
         $em->flush();
@@ -180,6 +190,10 @@ class PublicationController extends AbstractController
      *              @OA\Property(property="username", type="string"))),
      *     @OA\Property(property="date", type="string", format="date-time")
      * )))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
      * @OA\Tag(name="Publications")
      * @Security(name="Bearer")
      */
@@ -192,8 +206,12 @@ class PublicationController extends AbstractController
         $serializer = new Serializer($normalizers, $encoders);
 
         //Trabajamos los datos como queramos
-        $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
 
+        $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
+        if ($publication == null) {
+            $response=array('error'=>'Publicacion no encontrada');
+            return new JsonResponse($response,404);
+        }
         //Serializamos para poder mandar el objeto en la respuesta
         $data = $serializer->serialize($publication, 'json',
             [AbstractNormalizer::GROUPS => ['publications'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['id']]);
@@ -270,6 +288,10 @@ class PublicationController extends AbstractController
      *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="images", type="array", @OA\Items(type="string"))
      * )))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
      * @OA\RequestBody(description="Input data format",
      *     @OA\MediaType(mediaType="multipart/form-data",
      *     @OA\Schema(
@@ -289,8 +311,12 @@ class PublicationController extends AbstractController
         $serializer = new Serializer($normalizers, $encoders);
 
         //Obtenemos la publicacion
-        $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
 
+        $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
+        if ($publication == null) {
+            $response=array('error'=>'Publicacion no encontrada');
+            return new JsonResponse($response, 404);
+        }
         //Subimos los archivos
         $images = $publication->getImages();
         $document = $publication->getDocument();

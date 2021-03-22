@@ -36,6 +36,14 @@ class ExpertController extends AbstractController
      *          @OA\Property(property="name", type="string"),
      *          @OA\Property(property="description", type="string"))
      * ))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Response(response=409, description="Conflict",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
      * @OA\Tag(name="Experts")
      * @Security(name="Bearer")
      */
@@ -52,14 +60,30 @@ class ExpertController extends AbstractController
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
         //Obtenemos la categoria
+
         $cat = $doctrine->getRepository(Category::class)->find($id);
+        if ($cat == null) {
+            $response=array('error'=>'Categoria no existe');
+            return new JsonResponse($response,404);
+        }
         //Obetenemos el experto
+        try {
         $userdata = $doctrine->getRepository(User::class)->findBy(['username'=>$username])[0];
         $expert = $doctrine->getRepository(Expert::class)->findBy(['userdata'=>$userdata])[0];
+        } catch (\Throwable $e) {
+            $response=array('error'=>'Usuario no existe');
+            return new JsonResponse($response,404);
+        }
         //Añadimos la categoria
         $favCat = new ExpertCategories();
         $favCat->setCategory($cat);
         $favCat->setExpert($expert);
+        $favCatExists = $doctrine->getRepository(ExpertCategories::class)
+            ->findBy(['category'=>$cat, 'expert' =>$expert]);
+        if (count($favCatExists) > 0 ) {
+            $response=array('error'=>'Categoria ya es favorita');
+            return new JsonResponse($response,409);
+        }
         $expert->addFavCategory($favCat);
         $em->persist($favCat);
         $em->persist($expert);
@@ -88,6 +112,10 @@ class ExpertController extends AbstractController
      *          @OA\Property(property="name", type="string"),
      *          @OA\Property(property="description", type="string")))
      * ))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
      * @OA\Tag(name="Experts")
      * @Security(name="Bearer")
      */
@@ -104,8 +132,13 @@ class ExpertController extends AbstractController
         //Trabajamos los datos como queramos
         $doctrine = $this->getDoctrine();
         //Obetenemos el experto
+        try {
         $userdata = $doctrine->getRepository(User::class)->findBy(['username'=>$username])[0];
         $expert = $doctrine->getRepository(Expert::class)->findBy(['userdata'=>$userdata])[0];
+        } catch (\Throwable $e) {
+            $response=array('error'=>'Usuario no existe');
+            return new JsonResponse($response,404);
+        }
         //Obetemos las categorias
         $favCat = $expert->getFavCategories();
 

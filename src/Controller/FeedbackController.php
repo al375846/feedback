@@ -56,6 +56,10 @@ class FeedbackController extends AbstractController
      *          @OA\Property(property="grade", type="integer")),
      *     @OA\Property(property="date", type="string", format="date-time")
      * )))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
      * @OA\RequestBody(description="Input data format",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="username", type="string"),
@@ -85,11 +89,20 @@ class FeedbackController extends AbstractController
         $em = $doctrine->getManager();
         //Obtenemos la publicacion
         $publication = $doctrine->getRepository(Publication::class)->find($id);
+        if ($publication == null) {
+            $response=array('error'=>'Publicacion no existe');
+            return new JsonResponse($response,404);
+        }
         $feedback->setPublication($publication);
         //Decidimos el experto
+        try {
         $userdata = $doctrine->getRepository(User::class)->findBy(['username'=>$user->getUsername()])[0];
         $expert = $doctrine->getRepository(Expert::class)->findBy(['userdata'=>$userdata])[0];
         $feedback->setExpert($expert);
+        } catch (\Throwable $e) {
+            $response=array('error'=>'Usuario no existe');
+            return new JsonResponse($response,404);
+        }
         $em->persist($feedback);
         $em->flush();
 
@@ -164,6 +177,10 @@ class FeedbackController extends AbstractController
      *          @OA\Property(property="grade", type="integer")),
      *     @OA\Property(property="date", type="string", format="date-time")
      * )))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
      * @OA\Tag(name="Feedbacks")
      * @Security(name="Bearer")
      */
@@ -176,9 +193,13 @@ class FeedbackController extends AbstractController
         $serializer = new Serializer($normalizers, $encoders);
 
         //Trabajamos los datos como queramos
-        $feedbacks = $this->getDoctrine()->getRepository(Feedback::class)->find($id);
+        $feedback = $this->getDoctrine()->getRepository(Feedback::class)->find($id);
+        if ($feedback == null) {
+            $response=array('error'=>'Feedback no existe');
+            return new JsonResponse($response,404);
+        }
         //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($feedbacks, 'json',
+        $data = $serializer->serialize($feedback, 'json',
             [AbstractNormalizer::GROUPS => ['feedbacks'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['id']]);
 
         //Puede tener los atributos que se quieran
@@ -199,6 +220,10 @@ class FeedbackController extends AbstractController
      *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="images", type="array", @OA\Items(type="string"))
      * )))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
      * @OA\RequestBody(description="Input data format",
      *     @OA\MediaType(mediaType="multipart/form-data",
      *     @OA\Schema(
@@ -219,7 +244,10 @@ class FeedbackController extends AbstractController
 
         //Obtenemos la publicacion
         $feedback = $this->getDoctrine()->getRepository(Feedback::class)->find($id);
-
+        if ($feedback == null) {
+            $response=array('error'=>'Feedback no existe');
+            return new JsonResponse($response,404);
+        }
         //Subimos los archivos
         $images = $feedback->getImages();
         $document = $feedback->getDocument();
@@ -273,6 +301,10 @@ class FeedbackController extends AbstractController
      *     @OA\MediaType(mediaType="video/mp4",
      *     @OA\Schema(@OA\Property(property="video", type="string", format="binary"))),
      * )
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
      * @OA\Tag(name="Feedbacks")
      * @Security(name="Bearer")
      */

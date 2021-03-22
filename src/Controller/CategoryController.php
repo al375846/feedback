@@ -40,7 +40,11 @@ class CategoryController extends AbstractController
      *          @OA\Property(property="name", type="string"),
      *          @OA\Property(property="description", type="string"))
      * )))
-     * @OA\Response(response=401, description="Usuario no autorizado",
+     * @OA\Response(response=401, description="Unauthorized",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Response(response=404, description="Not found",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="error", type="string")
      * ))
@@ -75,23 +79,31 @@ class CategoryController extends AbstractController
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
         //Obtenemos el usuario
+        try {
         $username = $user->getUsername();
         $user = $doctrine->getRepository(User::class)->findBy(['username'=>$username])[0];
         //Comprobamos que sea admin
         $roles = $user->getRoles();
         if (!in_array("ROLE_ADMIN", $roles)) {
-            $response=array(
-                'publication'=>'Error: El usuario no es administrador, no puede añadir categorias'
-            );
+            $response=array('error'=>'El usuario no es administrador');
             return new JsonResponse($response,401);
         }
+        } catch (\Throwable $e) {
+            $response=array('error'=>'Usuario no existe');
+            return new JsonResponse($response,404);
+        }
         //Obtenemos la categoria padre
+        try {
         $parentName = $category->getParent();
         //$category->setParent(null);
         if($parentName != null) {
             $parentName = $parentName->getName();
             $parent = $doctrine->getRepository(Category::class)->findBy(['name'=>$parentName])[0];
             $category->setParent($parent);
+        }
+        } catch (\Throwable $e) {
+            $response=array('error'=>'Catergoria padre no existe');
+            return new JsonResponse($response,404);
         }
         $em->persist($category);
         $em->flush();
