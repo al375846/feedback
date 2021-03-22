@@ -26,7 +26,7 @@ class User implements UserInterface, \Serializable
     /**
      * @ORM\Column(type="string", length=180, unique=true)
      * @OA\Property(type="string", maxLength=180)
-     * @Groups({"publications", "feedbacks", "fav_categories"})
+     * @Groups({"publications", "feedbacks", "fav_categories", "profile"})
      */
     private $username;
 
@@ -46,30 +46,35 @@ class User implements UserInterface, \Serializable
     /**
      * @ORM\Column(type="string", length=255)
      * @OA\Property(type="string", maxLength=255)
+     * @Groups({"profile"})
      */
     private $email;
 
     /**
      * @ORM\Column(type="string", length=255)
      * @OA\Property(type="string", maxLength=255)
+     * @Groups({"profile"})
      */
     private $name;
 
     /**
      * @ORM\Column(type="string", length=255)
      * @OA\Property(type="string", maxLength=255)
+     * @Groups({"profile"})
      */
     private $lastname;
 
     /**
      * @ORM\Column(type="string", length=255)
      * @OA\Property(type="string", maxLength=255)
+     * @Groups({"profile"})
      */
     private $address;
 
     /**
      * @ORM\Column(type="string", length=255)
      * @OA\Property(type="string", maxLength=255)
+     * @Groups({"profile"})
      */
     private $phone;
 
