@@ -21,14 +21,14 @@ class Publication
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
      * @OA\Property(type="integer")
-     * @Groups({"publications"})
+     * @Groups({"publications", "incidences"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=255)
      * @OA\Property(type="string", maxLength=255)
-     * @Groups({"publications"})
+     * @Groups({"publications", "incidences"})
      */
     private $title;
 
@@ -36,42 +36,42 @@ class Publication
      * @ORM\ManyToOne(targetEntity=Category::class)
      * @ORM\JoinColumn(nullable=false)
      * @OA\Property(ref=@Model(type=Category::class))
-     * @Groups({"publications"})
+     * @Groups({"publications", "incidences"})
      */
     private $category;
 
     /**
      * @ORM\Column(type="text")
      * @OA\Property(type="string")
-     * @Groups({"publications"})
+     * @Groups({"publications", "incidences"})
      */
     private $description;
 
     /**
      * @ORM\Column(type="array", nullable=true)
      * @OA\Property(type="array", @OA\Items(type="string"))
-     * @Groups({"publications"})
+     * @Groups({"publications", "incidences"})
      */
     private $tags = [];
 
     /**
      * @ORM\Column(type="array", nullable=true)
      * @OA\Property(type="array", @OA\Items(type="string"))
-     * @Groups({"publications"})
+     * @Groups({"publications", "incidences"})
      */
     private $video = [];
 
     /**
      * @ORM\Column(type="array", nullable=true)
      * @OA\Property(type="array", @OA\Items(type="string"))
-     * @Groups({"publications"})
+     * @Groups({"publications", "incidences"})
      */
     private $document = [];
 
     /**
      * @ORM\Column(type="array", nullable=true)
      * @OA\Property(type="array", @OA\Items(type="string"))
-     * @Groups({"publications"})
+     * @Groups({"publications", "incidences"})
      */
     private $images = [];
 
@@ -79,14 +79,14 @@ class Publication
      * @ORM\ManyToOne(targetEntity=Apprentice::class, inversedBy="publications")
      * @ORM\JoinColumn(nullable=false)
      * @OA\Property(ref=@Model(type=Apprentice::class))
-     * @Groups({"publications"})
+     * @Groups({"publications", "incidences"})
      */
     private $apprentice;
 
     /**
      * @ORM\Column(type="datetime")
      * @OA\Property(type="datetime")
-     * @Groups({"publications"})
+     * @Groups({"publications", "incidences"})
      */
     private $date;
 

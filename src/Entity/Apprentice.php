@@ -40,7 +40,7 @@ class Apprentice
     /**
      * @ORM\Column(type="string", length=180, nullable=true)
      * @OA\Property(type="string", maxLength=180, nullable=true)
-     * @Groups({"publications", "feedbacks", "fav_categories"})
+     * @Groups({"publications", "feedbacks", "fav_categories", "incidences"})
      */
     private $username;
 
