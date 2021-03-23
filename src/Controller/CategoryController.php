@@ -161,4 +161,46 @@ class CategoryController extends AbstractController
 
         return new JsonResponse($response,200);
     }
+
+    #[Route('/api/category/raw', name: 'categories_get_raw', methods: ['GET'])]
+    /**
+     * @Route("/api/category/raw", name="categories_get_raw", methods={"GET"})
+     * @OA\Response(response=200, description="Gets all categories raw",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="categories", type="array", @OA\Items(
+     *     @OA\Property(property="id", type="integer"),
+     *     @OA\Property(property="name", type="string"),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="children", type="array",
+     *     @OA\Items(type="object",
+     *          @OA\Property(property="id", type="integer"),
+     *          @OA\Property(property="name", type="string"),
+     *          @OA\Property(property="description", type="string")))
+     * ))))
+     * @OA\Tag(name="Categories")
+     * @Security(name="Bearer")
+     */
+    public function getCategoriesRaw(): Response
+    {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Trabajamos los datos como queramos
+        $categories = $this->getDoctrine()->getRepository(Category::class)->findAll();
+
+        //Serializamos para poder mandar el objeto en la respuesta
+        $data = $serializer->serialize($categories, 'json',
+            [AbstractNormalizer::GROUPS => ['categories']]);
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'categories'=>json_decode($data)
+        );
+
+        return new JsonResponse($response,200);
+    }
 }
