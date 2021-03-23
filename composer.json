@@ -14,6 +14,7 @@
         "doctrine/doctrine-migrations-bundle": "^3.0",
         "doctrine/orm": "^2.8",
         "league/flysystem-aws-s3-v3": "^2.0",
+        "lexik/jwt-authentication-bundle": "^2.11",
         "nelmio/api-doc-bundle": "^4.2",
         "oneup/flysystem-bundle": "^4.0",
         "phpdocumentor/reflection-docblock": "^5.2",
