@@ -46,6 +46,7 @@ class UserFixtures extends Fixture
         $manager->persist($user2);
         $expert = new Expert();
         $expert->setUserdata($user2);
+        $expert->setUsername($user2->getUsername());
         $manager->persist($expert);
         //Aprendiz
         $user3 = new User();
@@ -61,6 +62,7 @@ class UserFixtures extends Fixture
         $manager->persist($user3);
         $apprentice = new Apprentice();
         $apprentice->setUserdata($user3);
+        $apprentice->setUsername($user3->getUsername());
         $manager->persist($apprentice);
 
         $manager->flush();

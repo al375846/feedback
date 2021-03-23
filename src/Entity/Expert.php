@@ -27,7 +27,6 @@ class Expert
      * @ORM\OneToOne(targetEntity=User::class, cascade={"persist", "remove"})
      * @ORM\JoinColumn(nullable=false)
      * @OA\Property(ref=@Model(type=User::class))
-     * @Groups({"feedbacks", "fav_categories"})
      */
     private $userdata;
 
@@ -46,6 +45,13 @@ class Expert
      * @ORM\OneToMany(targetEntity=Valoration::class, mappedBy="expert")
      */
     private $valorations;
+
+    /**
+     * @ORM\Column(type="string", length=180, nullable=true)
+     * @OA\Property(type="string", maxLength=180, nullable=true)
+     * @Groups({"feedbacks", "fav_categories", "publications"})
+     */
+    private $username;
 
     public function __construct()
     {
@@ -157,6 +163,18 @@ class Expert
                 $valoration->setExpert(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getUsername(): ?string
+    {
+        return $this->username;
+    }
+
+    public function setUsername(?string $username): self
+    {
+        $this->username = $username;
 
         return $this;
     }

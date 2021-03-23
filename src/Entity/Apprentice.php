@@ -28,7 +28,7 @@ class Apprentice
      * @ORM\OneToOne(targetEntity=User::class, cascade={"persist", "remove"})
      * @ORM\JoinColumn(nullable=false)
      * @OA\Property(ref=@Model(type=User::class))
-     * @Groups({"publications"})
+     *
      */
     private $userdata;
 
@@ -36,6 +36,13 @@ class Apprentice
      * @ORM\OneToMany(targetEntity=Publication::class, mappedBy="apprentice")
      */
     private $publications;
+
+    /**
+     * @ORM\Column(type="string", length=180, nullable=true)
+     * @OA\Property(type="string", maxLength=180, nullable=true)
+     * @Groups({"publications", "feedbacks", "fav_categories"})
+     */
+    private $username;
 
     public function __construct()
     {
@@ -85,6 +92,18 @@ class Apprentice
                 $publication->setApprentice(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getUsername(): ?string
+    {
+        return $this->username;
+    }
+
+    public function setUsername(?string $username): self
+    {
+        $this->username = $username;
 
         return $this;
     }
