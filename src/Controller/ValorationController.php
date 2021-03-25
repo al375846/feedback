@@ -32,7 +32,7 @@ class ValorationController extends AbstractController
     #[Route('/api/valoration/feedback/{id}', name: 'valoration_post', methods: ['POST'])]
     /**
      * @Route("/api/valoration/feedback/{id}", name="valoration_post", methods={"POST"})
-     * @OA\Response(response=200, description="Adds a category",
+     * @OA\Response(response=200, description="Adds a valoration",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="token", type="string")
      * ))
@@ -121,7 +121,7 @@ class ValorationController extends AbstractController
     #[Route('/api/valoration/{id}', name: 'valoration_put', methods: ['PUT'])]
     /**
      * @Route("/api/valoration/{id}", name="valoration_put", methods={"PUT"})
-     * @OA\Response(response=200, description="Adds a category",
+     * @OA\Response(response=200, description="Modifies a valoration",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="token", type="string")
      * ))
