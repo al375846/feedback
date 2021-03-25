@@ -53,7 +53,7 @@ class UserFixtures extends Fixture
         $user4 = new User();
         $user4->setUsername('adrianle');
         $password4 = $this->encoder->encodePassword($user4, 'adrianle');
-        $user4->setPassword($password2);
+        $user4->setPassword($password4);
         $user4->setRoles(['ROLE_USER']);
         $user4->setName('Adrian');
         $user4->setLastname('Leon');

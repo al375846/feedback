@@ -23,12 +23,17 @@ security:
                 require_previous_session: false
 
         api:
-            pattern: ^/api/(apprentice|expert|category|feedback|file|incidence|publication|user)
+            pattern: ^/api/(apprentice|expert|category|feedback|file|incidence|publication|user|usertype)
             stateless: true
             provider: app_user_provider
             guard:
                 authenticators:
                     - lexik_jwt_authentication.jwt_token_authenticator
+
+        register:
+            pattern: ^/api/register
+            stateless: true
+            anonymous: true
 
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
