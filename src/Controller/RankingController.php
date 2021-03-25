@@ -2,6 +2,9 @@
 
 namespace App\Controller;
 
+use App\Utils\ActiveExperts;
+use App\Utils\RatedExperts;
+use App\Utils\ActiveCategories;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -12,6 +15,7 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
 use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -24,22 +28,17 @@ class RankingController extends AbstractController
     #[Route('/api/ranking/rated/experts', name: 'rated_experts', methods: ['GET'])]
     /**
      * @Route("/api/ranking/rated/experts", name="rated_experts", methods={"GET"})
-     * @OA\Response(response=200, description="Gets all categories",
+     * @OA\Response(response=200, description="Gets experts order by valorations",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="categories", type="array", @OA\Items(
+     *     @OA\Property(property="ratedexperts", type="array", @OA\Items(
      *     @OA\Property(property="id", type="integer"),
-     *     @OA\Property(property="name", type="string"),
-     *     @OA\Property(property="description", type="string"),
-     *     @OA\Property(property="children", type="array",
-     *     @OA\Items(type="object",
-     *          @OA\Property(property="id", type="integer"),
-     *          @OA\Property(property="name", type="string"),
-     *          @OA\Property(property="description", type="string")))
+     *     @OA\Property(property="avg", type="string"),
+     *     @OA\Property(property="username", type="string")
      * ))))
      * @OA\Tag(name="Rankings")
      * @Security(name="Bearer")
      */
-    public function getRatedExperts(CategoryTree $categoryTree): Response
+    public function getRatedExperts(RatedExperts $ratedExperts): Response
     {
         //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
         $encoders = [new XmlEncoder(), new JsonEncoder()];
@@ -49,15 +48,14 @@ class RankingController extends AbstractController
         $serializer = new Serializer($normalizers, $encoders);
 
         //Trabajamos los datos como queramos
-        $categories = $this->getDoctrine()->getRepository(Category::class)->findAll();
-        $ordercat = $categoryTree->buildTree();
+        $experts = $ratedExperts->buildRatedExperts();
 
         //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($ordercat, 'json');
+        $data = $serializer->serialize($experts, 'json');
 
         //Puede tener los atributos que se quieran
         $response=array(
-            'categories'=>json_decode($data)
+            'ratedexperts'=>json_decode($data)
         );
 
         return new JsonResponse($response,200);
@@ -66,22 +64,16 @@ class RankingController extends AbstractController
     #[Route('/api/ranking/active/experts', name: 'active_experts', methods: ['GET'])]
     /**
      * @Route("/api/ranking/active/experts", name="active_experts", methods={"GET"})
-     * @OA\Response(response=200, description="Gets all categories",
+     * @OA\Response(response=200, description="Gets most active experts",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="categories", type="array", @OA\Items(
+     *     @OA\Property(property="activeexperts", type="array", @OA\Items(
      *     @OA\Property(property="id", type="integer"),
-     *     @OA\Property(property="name", type="string"),
-     *     @OA\Property(property="description", type="string"),
-     *     @OA\Property(property="children", type="array",
-     *     @OA\Items(type="object",
-     *          @OA\Property(property="id", type="integer"),
-     *          @OA\Property(property="name", type="string"),
-     *          @OA\Property(property="description", type="string")))
+     *     @OA\Property(property="username", type="string")
      * ))))
      * @OA\Tag(name="Rankings")
      * @Security(name="Bearer")
      */
-    public function getActiveExperts(CategoryTree $categoryTree): Response
+    public function getActiveExperts(ActiveExperts $activeExperts): Response
     {
         //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
         $encoders = [new XmlEncoder(), new JsonEncoder()];
@@ -91,15 +83,14 @@ class RankingController extends AbstractController
         $serializer = new Serializer($normalizers, $encoders);
 
         //Trabajamos los datos como queramos
-        $categories = $this->getDoctrine()->getRepository(Category::class)->findAll();
-        $ordercat = $categoryTree->buildTree();
+        $experts = $activeExperts->buildActiveExperts();
 
         //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($ordercat, 'json');
+        $data = $serializer->serialize($experts, 'json');
 
         //Puede tener los atributos que se quieran
         $response=array(
-            'categories'=>json_decode($data)
+            'activeexperts'=>json_decode($data)
         );
 
         return new JsonResponse($response,200);
@@ -108,22 +99,17 @@ class RankingController extends AbstractController
     #[Route('/api/ranking/active/categories', name: 'active_categories', methods: ['GET'])]
     /**
      * @Route("/api/ranking/active/categories", name="active_categories", methods={"GET"})
-     * @OA\Response(response=200, description="Gets all categories",
+     * @OA\Response(response=200, description="Gets most active categories",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="categories", type="array", @OA\Items(
+     *     @OA\Property(property="activecategories", type="array", @OA\Items(
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="name", type="string"),
-     *     @OA\Property(property="description", type="string"),
-     *     @OA\Property(property="children", type="array",
-     *     @OA\Items(type="object",
-     *          @OA\Property(property="id", type="integer"),
-     *          @OA\Property(property="name", type="string"),
-     *          @OA\Property(property="description", type="string")))
+     *     @OA\Property(property="description", type="string")
      * ))))
      * @OA\Tag(name="Rankings")
      * @Security(name="Bearer")
      */
-    public function getActiveCategories(CategoryTree $categoryTree): Response
+    public function getActiveCategories(ActiveCategories $activeCategories): Response
     {
         //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
         $encoders = [new XmlEncoder(), new JsonEncoder()];
@@ -133,15 +119,14 @@ class RankingController extends AbstractController
         $serializer = new Serializer($normalizers, $encoders);
 
         //Trabajamos los datos como queramos
-        $categories = $this->getDoctrine()->getRepository(Category::class)->findAll();
-        $ordercat = $categoryTree->buildTree();
+        $ordercat = $activeCategories->buildActiveCategories();
 
         //Serializamos para poder mandar el objeto en la respuesta
         $data = $serializer->serialize($ordercat, 'json');
 
         //Puede tener los atributos que se quieran
         $response=array(
-            'categories'=>json_decode($data)
+            'activecategories'=>json_decode($data)
         );
 
         return new JsonResponse($response,200);

@@ -48,6 +48,24 @@ class UserFixtures extends Fixture
         $expert->setUserdata($user2);
         $expert->setUsername($user2->getUsername());
         $manager->persist($expert);
+
+        //Exeperto
+        $user4 = new User();
+        $user4->setUsername('adrianle');
+        $password4 = $this->encoder->encodePassword($user4, 'adrianle');
+        $user4->setPassword($password2);
+        $user4->setRoles(['ROLE_USER']);
+        $user4->setName('Adrian');
+        $user4->setLastname('Leon');
+        $user4->setEmail('ad@gmail.com');
+        $user4->setAddress("C/ Holis");
+        $user4->setPhone("888888888");
+        $manager->persist($user4);
+        $expert2 = new Expert();
+        $expert2->setUserdata($user4);
+        $expert2->setUsername($user4->getUsername());
+        $manager->persist($expert2);
+
         //Aprendiz
         $user3 = new User();
         $user3->setUsername('jaumeba');
