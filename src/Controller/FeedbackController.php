@@ -45,9 +45,8 @@ class FeedbackController extends AbstractController
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="feedback", type="object",
      *     @OA\Property(property="id", type="string"),
-     *     @OA\Property(property="exepert", type="object",
-     *          @OA\Property(property="userdata", type="object",
-     *          @OA\Property(property="username", type="string"))),
+     *     @OA\Property(property="expert", type="object",
+     *          @OA\Property(property="username", type="string")),
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
@@ -124,9 +123,8 @@ class FeedbackController extends AbstractController
      * @OA\Response(response=200, description="Gets all feedbacks",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="feedbacks", type="array", @OA\Items(
-     *     @OA\Property(property="exepert", type="object",
-     *          @OA\Property(property="userdata", type="object",
-     *              @OA\Property(property="username", type="string"))),
+     *     @OA\Property(property="expert", type="object",
+     *          @OA\Property(property="username", type="string")),
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
@@ -166,14 +164,15 @@ class FeedbackController extends AbstractController
      * @OA\Response(response=200, description="Gets a feedback",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="feedback", type="object",
-     *     @OA\Property(property="exepert", type="object",
-     *          @OA\Property(property="userdata", type="object",
-     *              @OA\Property(property="username", type="string"))),
+     *     @OA\Property(property="id", type="integer"),
+     *     @OA\Property(property="expert", type="object",
+     *          @OA\Property(property="username", type="string")),
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="valoration", type="object",
+     *          @OA\Property(property="id", type="integer"),
      *          @OA\Property(property="grade", type="integer")),
      *     @OA\Property(property="date", type="string", format="date-time")
      * )))
@@ -200,7 +199,7 @@ class FeedbackController extends AbstractController
         }
         //Serializamos para poder mandar el objeto en la respuesta
         $data = $serializer->serialize($feedback, 'json',
-            [AbstractNormalizer::GROUPS => ['feedbacks'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['id']]);
+            [AbstractNormalizer::GROUPS => ['feedbacks']]);
 
         //Puede tener los atributos que se quieran
         $response=array(

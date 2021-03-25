@@ -22,7 +22,7 @@ class Feedback
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
      * @OA\Property(type="integer")
-     * @Groups({"feedbacks"})
+     * @Groups({"feedbacks", "valorations"})
      */
     private $id;
 
@@ -45,7 +45,7 @@ class Feedback
     /**
      * @ORM\Column(type="text")
      * @OA\Property(type="string")
-     * @Groups({"feedbacks"})
+     * @Groups({"feedbacks", "valorations"})
      */
     private $description;
 
@@ -80,7 +80,7 @@ class Feedback
     /**
      * @ORM\Column(type="datetime")
      * @OA\Property(type="datetime")
-     * @Groups({"feedbacks"})
+     * @Groups({"feedbacks", "valorations"})
      */
     private $date;
 

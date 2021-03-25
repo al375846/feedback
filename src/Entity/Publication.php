@@ -21,14 +21,14 @@ class Publication
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
      * @OA\Property(type="integer")
-     * @Groups({"publications", "incidences"})
+     * @Groups({"publications", "incidences", "feedbacks"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=255)
      * @OA\Property(type="string", maxLength=255)
-     * @Groups({"publications", "incidences"})
+     * @Groups({"publications", "incidences", "feedbacks"})
      */
     private $title;
 
@@ -36,14 +36,14 @@ class Publication
      * @ORM\ManyToOne(targetEntity=Category::class)
      * @ORM\JoinColumn(nullable=false)
      * @OA\Property(ref=@Model(type=Category::class))
-     * @Groups({"publications", "incidences"})
+     * @Groups({"publications", "incidences", "feedbacks"})
      */
     private $category;
 
     /**
      * @ORM\Column(type="text")
      * @OA\Property(type="string")
-     * @Groups({"publications", "incidences"})
+     * @Groups({"publications", "incidences", "feedbacks"})
      */
     private $description;
 

@@ -279,9 +279,9 @@ class PublicationController extends AbstractController
         return $response;
     }
 
-    #[Route('/api/publication/{id}/file/{file}', name: 'publication_post_file', methods: ['POST'])]
+    #[Route('/api/publication/{id}/file', name: 'publication_post_file', methods: ['POST'])]
     /**
-     * @Route("/api/publication/{id}/file/{file}", name="publication_post_file", methods={"POST"})
+     * @Route("/api/publication/{id}/file", name="publication_post_file", methods={"POST"})
      * @OA\Response(response=200, description="Adds a file to publication",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="publication", type="object",
@@ -303,7 +303,7 @@ class PublicationController extends AbstractController
      * @OA\Tag(name="Publications")
      * @Security(name="Bearer")
      */
-    public function postPublicationFile($id, $file, Request $request, UploaderService $uploaderService): Response {
+    public function postPublicationFile($id, Request $request, UploaderService $uploaderService): Response {
         //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));

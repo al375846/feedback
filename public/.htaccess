@@ -65,4 +65,8 @@ DirectoryIndex index.php
     </IfModule>
 </IfModule>
 
-
+<IfModule mod_xsendfile.c>
+  <IfModule mod_headers.c>
+    RequestHeader set X-Sendfile-Type X-Sendfile
+  </IfModule>
+</IfModule>
