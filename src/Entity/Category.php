@@ -21,21 +21,21 @@ class Category
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
      * @OA\Property(type="integer")
-     * @Groups({"categories", "fav_categories"})
+     * @Groups({"categories", "fav_categories", "suggestions"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=255)
      * @OA\Property(type="string", maxLength=255)
-     * @Groups({"publications", "categories", "feedbacks", "fav_categories"})
+     * @Groups({"publications", "categories", "feedbacks", "fav_categories", "suggestions"})
      */
     private $name;
 
     /**
      * @ORM\Column(type="text")
      * @OA\Property(type="string")
-     * @Groups({"categories", "fav_categories"})
+     * @Groups({"categories", "fav_categories", "suggestions"})
      */
     private $description;
 

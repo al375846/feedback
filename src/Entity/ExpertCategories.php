@@ -23,14 +23,14 @@ class ExpertCategories
 
     /**
      * @ORM\ManyToOne(targetEntity=Expert::class, inversedBy="favCategories")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=true)
      * @OA\Property(ref=@Model(type=Expert::class))
      */
     private $expert;
 
     /**
      * @ORM\ManyToOne(targetEntity=Category::class)
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=true)
      * @OA\Property(ref=@Model(type=Expert::class))
      * @Groups({"fav_categories"})
      */

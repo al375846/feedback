@@ -153,4 +153,122 @@ class ExpertController extends AbstractController
 
         return new JsonResponse($response,200);
     }
+
+    #[Route('/api/expert/{username}/category/{id}', name: 'expert_get_favcat_one', methods: ['GET'])]
+    /**
+     * @Route("/api/expert/{username}/category/{id}", name="expert_get_favcat_one", methods={"GET"})
+     * @OA\Response(response=200, description="Gets a fav category of an exepert",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="favCategorie", type="boolean")
+     * ))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Tag(name="Experts")
+     * @Security(name="Bearer")
+     */
+    public function getOneFavCategory($username, $id): Response
+    {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Trabajamos los datos como queramos
+        $doctrine = $this->getDoctrine();
+        //Obetenemos el experto
+        try {
+            $userdata = $doctrine->getRepository(User::class)->findBy(['username'=>$username])[0];
+            $expert = $doctrine->getRepository(Expert::class)->findBy(['userdata'=>$userdata])[0];
+        } catch (\Throwable $e) {
+            $response=array('error'=>'Usuario no existe');
+            return new JsonResponse($response,404);
+        }
+        //Obetemos la categoria
+        $category = $doctrine->getRepository(Category::class)->find($id);
+        if ($category == null) {
+            $response=array('error'=>'Categoria no existe');
+            return new JsonResponse($response,404);
+        }
+
+        $favCat = $doctrine->getRepository(ExpertCategories::class)
+            ->findOneBy(['expert'=>$expert, 'category'=>$category]);
+
+        $isFavCategory = false;
+        if ($favCat != null) {
+            $isFavCategory = true;
+        }
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'favCategory'=>$isFavCategory,
+        );
+
+        return new JsonResponse($response,200);
+    }
+
+    #[Route('/api/expert/{username}/category/{id}', name: 'delete_fav_category', methods: ['DELETE'])]
+    /**
+     * @Route("/api/expert/{username}/category/{id}", name="delete_fav_category", methods={"DELETE"})
+     * @OA\Response(response=200, description="Deletes a fav category of an exepert",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="deleted", type="boolean")
+     * ))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Tag(name="Experts")
+     * @Security(name="Bearer")
+     */
+    public function deleteFavCategory($username, $id): Response
+    {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Trabajamos los datos como queramos
+        $doctrine = $this->getDoctrine();
+        $em = $doctrine->getManager();
+        //Obetenemos el experto
+        try {
+            $userdata = $doctrine->getRepository(User::class)->findBy(['username'=>$username])[0];
+            $expert = $doctrine->getRepository(Expert::class)->findBy(['userdata'=>$userdata])[0];
+        } catch (\Throwable $e) {
+            $response=array('error'=>'Usuario no existe');
+            return new JsonResponse($response,404);
+        }
+        //Obetemos la categoria
+        $category = $doctrine->getRepository(Category::class)->find($id);
+        if ($category == null) {
+            $response=array('error'=>'Categoria no existe');
+            return new JsonResponse($response,404);
+        }
+
+        $favCat = $doctrine->getRepository(ExpertCategories::class)
+            ->findOneBy(['expert'=>$expert, 'category'=>$category]);
+
+        if ($favCat == null) {
+            $response=array('error'=>'Categoria favorita no existe');
+            return new JsonResponse($response,404);
+        }
+
+        $expert->removeFavCategory($favCat);
+        $em->persist($expert);
+        $em->persist($favCat);
+        $em->flush();
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'deleted'=>true,
+        );
+
+        return new JsonResponse($response,200);
+    }
 }

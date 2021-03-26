@@ -4,6 +4,10 @@ namespace App\Entity;
 
 use App\Repository\SuggestionRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Annotations as OA;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\Ignore;
 
 /**
  * @ORM\Entity(repositoryClass=SuggestionRepository::class)
@@ -14,21 +18,30 @@ class Suggestion
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
+     * @OA\Property(type="integer")
+     * @Groups({"suggestions"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @OA\Property(type="string", maxLength=255)
+     * @Groups({"suggestions"})
      */
     private $name;
 
     /**
      * @ORM\Column(type="text")
+     * @OA\Property(type="string")
+     * @Groups({"suggestions"})
      */
     private $description;
 
     /**
      * @ORM\ManyToOne(targetEntity=Category::class)
+     * @ORM\JoinColumn(nullable=true)
+     * @OA\Property(ref=@Model(type=Category::class))
+     * @Groups({"suggestions"})
      */
     private $parent;
 
