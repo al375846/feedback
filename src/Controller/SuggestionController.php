@@ -191,4 +191,50 @@ class SuggestionController extends AbstractController
 
         return new JsonResponse($response,200);
     }
+
+    #[Route('/api/suggestion/{id}', name: 'suggestion_delete', methods: ['DELETE'])]
+    /**
+     * @Route("/api/suggestion/{id}", name="suggestion_delete", methods={"DELETE"})
+     * @OA\Response(response=200, description="Deletes a fav category of an exepert",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="deleted", type="boolean")
+     * ))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Tag(name="Suggestions")
+     * @Security(name="Bearer")
+     */
+    public function deleteSuggestion($id): Response
+    {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Trabajamos los datos como queramos
+        $doctrine = $this->getDoctrine();
+        $em = $doctrine->getManager();
+
+        //Obtenemos la sugerencia
+        $suggestion = $this->getDoctrine()->getRepository(Suggestion::class)->find($id);
+
+        if ($suggestion == null) {
+            $response=array('error'=>'Sugerencia no existe');
+            return new JsonResponse($response,404);
+        }
+
+        $em->remove($suggestion);
+        $em->flush();
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'deleted'=>true
+        );
+
+        return new JsonResponse($response,200);
+    }
 }

@@ -159,7 +159,10 @@ class ExpertController extends AbstractController
      * @Route("/api/expert/{username}/category/{id}", name="expert_get_favcat_one", methods={"GET"})
      * @OA\Response(response=200, description="Gets a fav category of an exepert",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="favCategorie", type="boolean")
+     *     @OA\Property(property="favCategory", type="object",
+     *          @OA\Property(property="id", type="integer"),
+     *          @OA\Property(property="name", type="string"),
+     *          @OA\Property(property="description", type="string"))
      * ))
      * @OA\Response(response=404, description="Not found",
      *     @OA\JsonContent(type="object",
@@ -265,7 +268,7 @@ class ExpertController extends AbstractController
 
         $expert->removeFavCategory($favCat);
         $em->persist($expert);
-        $em->persist($favCat);
+        $em->remove($favCat);
         $em->flush();
 
         //Puede tener los atributos que se quieran
