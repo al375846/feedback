@@ -2,8 +2,8 @@
 
 namespace App\Controller;
 
-use App\Entity\User;
 use App\Utils\CategoryTree;
+use App\Entity\Category;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,7 +22,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
 use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
-use App\Entity\Category;
+
 
 class CategoryController extends AbstractController
 {
@@ -48,74 +48,67 @@ class CategoryController extends AbstractController
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="error", type="string")
      * ))
+     * @OA\Response(response=403, description="Forbbiden",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
      * @OA\RequestBody(description="Input data format",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="name", type="string"),
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="parent", type="object", nullable="true",
-     *          @OA\Property(property="name", type="string")),
-     *     @OA\Property(property="username", type="string"),
+     *          @OA\Property(property="name", type="string"))
      * ))
      * @OA\Tag(name="Categories")
      * @Security(name="Bearer")
+     * @param Request $request
+     * @return Response
      */
     public function postCategory(Request $request): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Only admins can post categories
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Deserializamos para obtener los datos del objeto
-        $category = $serializer->deserialize($request->getContent(), Category::class, 'json',
-            [AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']]);
+        //Deserialize to obtain object data
+        $category = $serializer->deserialize($request->getContent(), Category::class, 'json', [
+            AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']
+        ]);
 
-        $user = $serializer->deserialize($request->getContent(), User::class, 'json',
-            [AbstractNormalizer::IGNORED_ATTRIBUTES => ['name', 'description', 'parent']]);
-
-        //Trabajamos los datos como queramos
+        //Get the doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
-        //Obtenemos el usuario
-        try {
-        $username = $user->getUsername();
-        $user = $doctrine->getRepository(User::class)->findBy(['username'=>$username])[0];
-        //Comprobamos que sea admin
-        $roles = $user->getRoles();
-        if (!in_array("ROLE_ADMIN", $roles)) {
-            $response=array('error'=>'El usuario no es administrador');
-            return new JsonResponse($response,401);
-        }
-        } catch (\Throwable $e) {
-            $response=array('error'=>'Usuario no existe');
-            return new JsonResponse($response,404);
-        }
-        //Obtenemos la categoria padre
-        try {
+
+        //Get the parent category
         $parentName = $category->getParent();
-        //$category->setParent(null);
         if($parentName != null) {
             $parentName = $parentName->getName();
-            $parent = $doctrine->getRepository(Category::class)->findBy(['name'=>$parentName])[0];
+            $parent = $doctrine->getRepository(Category::class)->findOneBy(['name'=>$parentName]);
+            if ($parent == null) {
+                $response=array('error'=>'Parent category does not exist');
+                return new JsonResponse($response,404);
+            }
             $category->setParent($parent);
         }
-        } catch (\Throwable $e) {
-            $response=array('error'=>'Catergoria padre no existe');
-            return new JsonResponse($response,404);
-        }
+
         $em->persist($category);
         $em->flush();
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($category, 'json',
-            [AbstractNormalizer::GROUPS => ['categories']]);
+        //Serialize the response data
+        $data = $serializer->serialize($category, 'json', [
+            AbstractNormalizer::GROUPS => ['categories']
+        ]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'category'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('category'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -137,27 +130,28 @@ class CategoryController extends AbstractController
      * ))))
      * @OA\Tag(name="Categories")
      * @Security(name="Bearer")
+     * @param CategoryTree $categoryTree
+     * @return Response
      */
     public function getCategories(CategoryTree $categoryTree): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
-        $categories = $this->getDoctrine()->getRepository(Category::class)->findAll();
-        $ordercat = $categoryTree->buildTree();
+        //Get the categories
+        $categories = $categoryTree->buildTree();
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($ordercat, 'json');
+        //Serialize the response data
+        $data = $serializer->serialize($categories, 'json');
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'categories'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('categories'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -181,24 +175,25 @@ class CategoryController extends AbstractController
      */
     public function getCategoriesRaw(): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
+        //Get categories
         $categories = $this->getDoctrine()->getRepository(Category::class)->findAll();
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($categories, 'json',
-            [AbstractNormalizer::GROUPS => ['categories']]);
+        //Serialize the response data
+        $data = $serializer->serialize($categories, 'json', [
+            AbstractNormalizer::GROUPS => ['categories']
+        ]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'categories'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('categories'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }

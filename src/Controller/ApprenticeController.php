@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Entity\Apprentice;
 use App\Entity\Publication;
-use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,10 +22,6 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
 use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\Finder\Finder;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
-use Symfony\Component\HttpFoundation\HeaderUtils;
 
 class ApprenticeController extends AbstractController
 {
@@ -57,43 +52,42 @@ class ApprenticeController extends AbstractController
      * ))
      * @OA\Tag(name="Apprentices")
      * @Security(name="Bearer")
+     * @return Response
      */
-    public function getPublicationsUser(Request $request): Response
+    public function getPublicationsUser(): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
+        //Get the doctrine
         $doctrine = $this->getDoctrine();
 
-        //Obtenemos al aprendiz
-        $token = explode(" ", $request->headers->get('Authorization'))[1];
-        $tokenParts = explode(".", $token);
-        $tokenPayload = base64_decode($tokenParts[1]);
-        $jwtPayload = json_decode($tokenPayload);
-        $username = $jwtPayload->username;
+        //Get the apprentice
+        $username = $this->getUser()->getUsername();
         $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username'=>$username]);
 
-        //Comprobamos que el usuario es aprendiz
+        //Check if the user is an apprentice
         if ($apprentice == null) {
-            $response=array('error'=>'El usuario no es un aprendiz');
+            $response=array('error'=>'The user is not an apprentice');
             return new JsonResponse($response, 409);
         }
 
-        //Obtenemos las publicaciones
+        //Get publications
         $publications = $doctrine->getRepository(Publication::class)->findBy(['apprentice'=>$apprentice]);
 
-        //Serializamos para poder mandar el objeto en la respuesta
+        //Serialize the response data
         $data = $serializer->serialize($publications, 'json', [
             AbstractNormalizer::GROUPS => ['publications'],
             AbstractNormalizer::IGNORED_ATTRIBUTES => ['apprentice']
         ]);
 
-        //Creamos la respuesta
+        //Create the response
         $response=array('publications'=>json_decode($data));
 
         return new JsonResponse($response, 200);
