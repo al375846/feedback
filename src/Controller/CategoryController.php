@@ -9,7 +9,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
@@ -26,6 +25,7 @@ use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
 
 class CategoryController extends AbstractController
 {
+
     #[Route('/api/category', name: 'category_post', methods: ['POST'])]
     /**
      * @Route("/api/category", name="category_post", methods={"POST"})
@@ -93,12 +93,13 @@ class CategoryController extends AbstractController
             $parentName = $parentName->getName();
             $parent = $doctrine->getRepository(Category::class)->findOneBy(['name'=>$parentName]);
             if ($parent == null) {
-                $response=array('error'=>'Parent category does not exist');
+                $response=array('error'=>'Parent category not found');
                 return new JsonResponse($response,404);
             }
             $category->setParent($parent);
         }
 
+        //Save the category
         $em->persist($category);
         $em->flush();
 
@@ -194,6 +195,45 @@ class CategoryController extends AbstractController
 
         //Create the response
         $response=array('categories'=>json_decode($data));
+
+        return new JsonResponse($response,200);
+    }
+
+    #[Route('/api/category/{id}', name: 'category_delete', methods: ['DELETE'])]
+    /**
+     * @Route("/api/category/{id}", name="category_delete", methods={"DELETE"})
+     * @OA\Response(response=200, description="Deletes a category",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="deleted", type="boolean")
+     * ))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Tag(name="Categories")
+     * @Security(name="Bearer")
+     * @param $id
+     * @return Response
+     */
+    public function deleteCategory($id): Response
+    {
+        //Get the doctrine
+        $doctrine = $this->getDoctrine();
+        $em = $doctrine->getManager();
+
+        //Get the category
+        $category = $doctrine->getRepository(Category::class)->find($id);
+        if ($category == null) {
+            $response=array('error'=>'Category not found');
+            return new JsonResponse($response,404);
+        }
+
+        //Remove the category
+        $em->remove($category);
+        $em->flush();
+
+        //Create the response
+        $response=array('deleted'=>true);
 
         return new JsonResponse($response,200);
     }

@@ -28,7 +28,7 @@ class Category
     /**
      * @ORM\Column(type="string", length=255)
      * @OA\Property(type="string", maxLength=255)
-     * @Groups({"publications", "categories", "feedbacks", "fav_categories", "suggestions"})
+     * @Groups({"publications", "categories", "feedbacks", "fav_categories", "suggestions", "incidences"})
      */
     private $name;
 

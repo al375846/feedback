@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Entity\Suggestion;
 use App\Entity\Category;
-use App\Entity\User;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,7 +19,6 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
-use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
 
@@ -57,55 +55,58 @@ class SuggestionController extends AbstractController
      * ))
      * @OA\Tag(name="Suggestions")
      * @Security(name="Bearer")
+     * @param Request $request
+     * @return Response
      */
     public function postSuggestion(Request $request): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Deserializamos para obtener los datos del objeto
+        //Deserialize to obtain object data
         $suggestion= $serializer->deserialize($request->getContent(), Suggestion::class, 'json',
             [AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']]);
 
-        //Trabajamos los datos como queramos
+        //Get the doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
 
-        //Comprobamos que no existe previamente
-
-        $sugg = $doctrine->getRepository(Suggestion::class)->findBy(['name'=>$suggestion->getName()])[0];
-        if ($sugg != null) {
-            $response=array('error'=>'Sugerencia ya existe');
+        //Check it doesnt exist
+        $sug = $doctrine->getRepository(Suggestion::class)->findOneBy(['name'=>$suggestion->getName()]);
+        if ($sug != null) {
+            $response=array('error'=>'Suggestion already exists');
             return new JsonResponse($response,409);
         }
 
-        //Obtenemos la categoria padre
-        try {
-            $parentName = $suggestion->getParent();
-            if($parentName != null) {
-                $parentName = $parentName->getName();
-                $parent = $doctrine->getRepository(Category::class)->findBy(['name'=>$parentName])[0];
-                $suggestion->setParent($parent);
+        //Get the parent category
+        $parentName = $suggestion->getParent();
+        if($parentName != null) {
+            $parentName = $parentName->getName();
+            $parent = $doctrine->getRepository(Category::class)->findOneBy(['name'=>$parentName]);
+            if ($parent == null) {
+                $response=array('error'=>'Parent category not found');
+                return new JsonResponse($response,404);
             }
-        } catch (\Throwable $e) {
-            $response=array('error'=>'Catergoria padre no existe');
-            return new JsonResponse($response,404);
+            $suggestion->setParent($parent);
         }
+
+        //Save the response
         $em->persist($suggestion);
         $em->flush();
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($suggestion, 'json',
-            [AbstractNormalizer::GROUPS => ['suggestions']]);
+        //Serialize the response data
+        $data = $serializer->serialize($suggestion, 'json', [
+            AbstractNormalizer::GROUPS => ['suggestions']
+        ]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'category'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('category'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -129,24 +130,25 @@ class SuggestionController extends AbstractController
      */
     public function getSuggestions(): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
+        //Get suggestions
         $suggestions = $this->getDoctrine()->getRepository(Suggestion::class)->findAll();
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($suggestions, 'json',
-            [AbstractNormalizer::GROUPS => ['suggestions']]);
+        //Serialize the response data
+        $data = $serializer->serialize($suggestions, 'json', [
+            AbstractNormalizer::GROUPS => ['suggestions']
+        ]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'suggestions'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('suggestions'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -167,27 +169,29 @@ class SuggestionController extends AbstractController
      * )))
      * @OA\Tag(name="Suggestions")
      * @Security(name="Bearer")
+     * @param $id
+     * @return Response
      */
     public function getSuggestion($id): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
+        //Get the suggestion
         $suggestion = $this->getDoctrine()->getRepository(Suggestion::class)->find($id);
 
-        //Serializamos para poder mandar el objeto en la respuesta
+        //Serialize the response data
         $data = $serializer->serialize($suggestion, 'json',
             [AbstractNormalizer::GROUPS => ['suggestions']]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'suggestion'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('suggestion'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -205,35 +209,28 @@ class SuggestionController extends AbstractController
      * ))
      * @OA\Tag(name="Suggestions")
      * @Security(name="Bearer")
+     * @param $id
+     * @return Response
      */
     public function deleteSuggestion($id): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
-        $serializer = new Serializer($normalizers, $encoders);
-
-        //Trabajamos los datos como queramos
+        //Get the doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
 
-        //Obtenemos la sugerencia
+        //Get the suggestion
         $suggestion = $this->getDoctrine()->getRepository(Suggestion::class)->find($id);
-
         if ($suggestion == null) {
-            $response=array('error'=>'Sugerencia no existe');
+            $response=array('error'=>'Suggestion not found');
             return new JsonResponse($response,404);
         }
 
+        //Remove the suggestion
         $em->remove($suggestion);
         $em->flush();
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'deleted'=>true
-        );
+        //Create the response
+        $response=array('deleted'=>true);
 
         return new JsonResponse($response,200);
     }
