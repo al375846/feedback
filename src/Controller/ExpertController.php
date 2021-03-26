@@ -197,14 +197,18 @@ class ExpertController extends AbstractController
         $favCat = $doctrine->getRepository(ExpertCategories::class)
             ->findOneBy(['expert'=>$expert, 'category'=>$category]);
 
-        $isFavCategory = false;
-        if ($favCat != null) {
-            $isFavCategory = true;
+        if ($favCat == null) {
+            $response=array('error'=>'Categoria favorita no existe');
+            return new JsonResponse($response,404);
         }
+
+        //Serializamos para poder mandar el objeto en la respuesta
+        $data = $serializer->serialize($favCat->getCategory(), 'json',
+            [AbstractNormalizer::GROUPS => ['fav_categories']]);
 
         //Puede tener los atributos que se quieran
         $response=array(
-            'favCategory'=>$isFavCategory,
+            'favCategory'=>json_decode($data),
         );
 
         return new JsonResponse($response,200);

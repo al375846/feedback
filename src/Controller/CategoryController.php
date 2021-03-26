@@ -171,11 +171,10 @@ class CategoryController extends AbstractController
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="name", type="string"),
      *     @OA\Property(property="description", type="string"),
-     *     @OA\Property(property="children", type="array",
-     *     @OA\Items(type="object",
+     *     @OA\Property(property="parent", type="object",
      *          @OA\Property(property="id", type="integer"),
      *          @OA\Property(property="name", type="string"),
-     *          @OA\Property(property="description", type="string")))
+     *          @OA\Property(property="description", type="string"))
      * ))))
      * @OA\Tag(name="Categories")
      * @Security(name="Bearer")

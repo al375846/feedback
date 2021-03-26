@@ -109,4 +109,86 @@ class SuggestionController extends AbstractController
 
         return new JsonResponse($response,200);
     }
+
+    #[Route('/api/suggestion', name: 'suggestions_get', methods: ['GET'])]
+    /**
+     * @Route("/api/suggestion", name="suggestions_get", methods={"GET"})
+     * @OA\Response(response=200, description="Gets all suggestions",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="suggestions", type="array", @OA\Items(
+     *     @OA\Property(property="id", type="integer"),
+     *     @OA\Property(property="name", type="string"),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="parent", type="object",
+     *          @OA\Property(property="id", type="integer"),
+     *          @OA\Property(property="name", type="string"),
+     *          @OA\Property(property="description", type="string"))
+     * ))))
+     * @OA\Tag(name="Suggestions")
+     * @Security(name="Bearer")
+     */
+    public function getSuggestions(): Response
+    {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Trabajamos los datos como queramos
+        $suggestions = $this->getDoctrine()->getRepository(Suggestion::class)->findAll();
+
+        //Serializamos para poder mandar el objeto en la respuesta
+        $data = $serializer->serialize($suggestions, 'json',
+            [AbstractNormalizer::GROUPS => ['suggestions']]);
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'suggestions'=>json_decode($data)
+        );
+
+        return new JsonResponse($response,200);
+    }
+
+    #[Route('/api/suggestion/{id}', name: 'suggestion_get', methods: ['GET'])]
+    /**
+     * @Route("/api/suggestion/{id}", name="suggestion_get", methods={"GET"})
+     * @OA\Response(response=200, description="Gets a suggestion",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="suggestion", type="object",
+     *     @OA\Property(property="id", type="integer"),
+     *     @OA\Property(property="name", type="string"),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="parent", type="object",
+     *          @OA\Property(property="id", type="integer"),
+     *          @OA\Property(property="name", type="string"),
+     *          @OA\Property(property="description", type="string"))
+     * )))
+     * @OA\Tag(name="Suggestions")
+     * @Security(name="Bearer")
+     */
+    public function getSuggestion($id): Response
+    {
+        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Trabajamos los datos como queramos
+        $suggestion = $this->getDoctrine()->getRepository(Suggestion::class)->find($id);
+
+        //Serializamos para poder mandar el objeto en la respuesta
+        $data = $serializer->serialize($suggestion, 'json',
+            [AbstractNormalizer::GROUPS => ['suggestions']]);
+
+        //Puede tener los atributos que se quieran
+        $response=array(
+            'suggestion'=>json_decode($data)
+        );
+
+        return new JsonResponse($response,200);
+    }
 }
