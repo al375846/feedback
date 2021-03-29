@@ -141,9 +141,13 @@ class ExpertController extends AbstractController
         }
         //Obetemos las categorias
         $favCat = $expert->getFavCategories();
+        $favorite = [];
+        foreach ($favCat as $fav) {
+            $favorite[] = $fav->getCategory();
+        }
 
         //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($favCat, 'json',
+        $data = $serializer->serialize($favorite, 'json',
             [AbstractNormalizer::GROUPS => ['fav_categories']]);
 
         //Puede tener los atributos que se quieran
