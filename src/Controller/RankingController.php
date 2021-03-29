@@ -15,11 +15,9 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
 use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
-use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
-use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
 
@@ -37,26 +35,28 @@ class RankingController extends AbstractController
      * ))))
      * @OA\Tag(name="Rankings")
      * @Security(name="Bearer")
+     * @param RatedExperts $ratedExperts
+     * @return Response
      */
     public function getRatedExperts(RatedExperts $ratedExperts): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
+        //Get experts
         $experts = $ratedExperts->buildRatedExperts();
 
-        //Serializamos para poder mandar el objeto en la respuesta
+        //Serialize the response data
         $data = $serializer->serialize($experts, 'json');
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'ratedexperts'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('ratedexperts'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -72,26 +72,28 @@ class RankingController extends AbstractController
      * ))))
      * @OA\Tag(name="Rankings")
      * @Security(name="Bearer")
+     * @param ActiveExperts $activeExperts
+     * @return Response
      */
     public function getActiveExperts(ActiveExperts $activeExperts): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
+        //Get data
         $experts = $activeExperts->buildActiveExperts();
 
-        //Serializamos para poder mandar el objeto en la respuesta
+        //Serialize the response data
         $data = $serializer->serialize($experts, 'json');
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'activeexperts'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('ratedexperts'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -108,26 +110,28 @@ class RankingController extends AbstractController
      * ))))
      * @OA\Tag(name="Rankings")
      * @Security(name="Bearer")
+     * @param ActiveCategories $activeCategories
+     * @return Response
      */
     public function getActiveCategories(ActiveCategories $activeCategories): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
-        $ordercat = $activeCategories->buildActiveCategories();
+        //Get data
+        $categories = $activeCategories->buildActiveCategories();
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($ordercat, 'json');
+        //Serialize the response data
+        $data = $serializer->serialize($categories, 'json');
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'activecategories'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('activecategories'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }

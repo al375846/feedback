@@ -13,7 +13,7 @@ class ActiveCategories {
         $this->categories = $this->getCategories();
     }
 
-    public function resetCAtegories() {
+    public function resetCategories() {
         $this->categories = $this->getCategories();
     }
 

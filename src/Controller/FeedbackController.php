@@ -2,22 +2,17 @@
 
 namespace App\Controller;
 
-use App\Entity\Apprentice;
-use App\Entity\Category;
 use App\Entity\Expert;
 use App\Entity\Feedback;
-use App\Entity\Valoration;
 use App\Service\UploaderService;
 use App\Entity\User;
 use Aws\S3\S3Client;
-use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
@@ -31,9 +26,6 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
 use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
 use App\Entity\Publication;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\Finder\Finder;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 
 class FeedbackController extends AbstractController
@@ -61,58 +53,58 @@ class FeedbackController extends AbstractController
      * ))
      * @OA\RequestBody(description="Input data format",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="username", type="string"),
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="date", type="string", format="date-time")
      * ))
      * @OA\Tag(name="Feedbacks")
      * @Security(name="Bearer")
+     * @param $id
+     * @param Request $request
+     * @return Response
      */
     public function postFeedback($id, Request $request): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Deserializamos para obtener los datos del objeto
-        $user = $serializer->deserialize($request->getContent(),
-            User::class, 'json', [AbstractNormalizer::ATTRIBUTES => ['username']]);
-        $feedback = $serializer->deserialize($request->getContent(),
-            Feedback::class, 'json', [AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']]);
+        //Deserialize to obtain object data
+        $user = $this->getUser();
+        $feedback = $serializer->deserialize($request->getContent(), Feedback::class, 'json');
 
-        //Trabajamos los datos como queramos
+        //Get doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
-        //Obtenemos la publicacion
+
+        //Get publication
         $publication = $doctrine->getRepository(Publication::class)->find($id);
         if ($publication == null) {
-            $response=array('error'=>'Publicacion no existe');
+            $response=array('error'=>'Publication not found');
             return new JsonResponse($response,404);
         }
         $feedback->setPublication($publication);
-        //Decidimos el experto
-        try {
-        $userdata = $doctrine->getRepository(User::class)->findBy(['username'=>$user->getUsername()])[0];
-        $expert = $doctrine->getRepository(Expert::class)->findBy(['userdata'=>$userdata])[0];
+
+        //Get expert
+        $user = $this->getUser();
+        $expert = $doctrine->getRepository(Expert::class)->findOneBy(['userdata'=>$user]);
         $feedback->setExpert($expert);
-        } catch (\Throwable $e) {
-            $response=array('error'=>'Usuario no existe');
-            return new JsonResponse($response,404);
-        }
+
+        //Save the feedback
         $em->persist($feedback);
         $em->flush();
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($feedback, 'json',
-            [AbstractNormalizer::GROUPS => ['feedbacks']]);
+        //Serialize the response data
+        $data = $serializer->serialize($feedback, 'json', [
+            AbstractNormalizer::GROUPS => ['feedbacks']
+        ]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'feedback'=>json_decode($data),
-        );
+        //Create the response
+        $response=array('feedback'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -137,23 +129,26 @@ class FeedbackController extends AbstractController
      * @Security(name="Bearer")
      */
     public function getFeedbacks(): Response {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
+        //Get feedbacks
         $feedbacks = $this->getDoctrine()->getRepository(Feedback::class)->findAll();
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($feedbacks, 'json',
-            [AbstractNormalizer::GROUPS => ['feedbacks'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['publication']]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'feedbacks'=>json_decode($data)
-        );
+        //Serialize the response data
+        $data = $serializer->serialize($feedbacks, 'json', [
+            AbstractNormalizer::GROUPS => ['feedbacks'],
+            AbstractNormalizer::IGNORED_ATTRIBUTES => ['publication']
+        ]);
+
+        //Create the response
+        $response=array('feedbacks'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -182,29 +177,33 @@ class FeedbackController extends AbstractController
      * ))
      * @OA\Tag(name="Feedbacks")
      * @Security(name="Bearer")
+     * @param $id
+     * @return Response
      */
     public function getFeedback($id): Response {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
+        //Get feedback
         $feedback = $this->getDoctrine()->getRepository(Feedback::class)->find($id);
         if ($feedback == null) {
-            $response=array('error'=>'Feedback no existe');
+            $response=array('error'=>'Feedback not found');
             return new JsonResponse($response,404);
         }
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($feedback, 'json',
-            [AbstractNormalizer::GROUPS => ['feedbacks']]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'feedback'=>json_decode($data)
-        );
+        //Serialize the response data
+        $data = $serializer->serialize($feedback, 'json', [
+            AbstractNormalizer::GROUPS => ['feedbacks']
+        ]);
+
+        //Create the response
+        $response=array('feedback'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -232,29 +231,40 @@ class FeedbackController extends AbstractController
      *     )))
      * @OA\Tag(name="Feedbacks")
      * @Security(name="Bearer")
+     * @param $id
+     * @param Request $request
+     * @param UploaderService $uploaderService
+     * @return Response
      */
     public function postFeedbackFile($id, Request $request, UploaderService $uploaderService): Response {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Obtenemos la publicacion
-        $feedback = $this->getDoctrine()->getRepository(Feedback::class)->find($id);
+        //Get doctrine
+        $doctrine = $this->getDoctrine();
+        $em = $doctrine->getManager();
+
+        //Get feedback
+        $feedback = $doctrine->getRepository(Feedback::class)->find($id);
         if ($feedback == null) {
-            $response=array('error'=>'Feedback no existe');
+            $response=array('error'=>'Feedback not found');
             return new JsonResponse($response,404);
         }
-        //Subimos los archivos
+
+        //Upload files
         $images = $feedback->getImages();
         $document = $feedback->getDocument();
         $video = $feedback->getVideo();
         foreach($request->files->getIterator() as $file) {
             $filename = $uploaderService->upload($file);
-            $arrayfile = explode(".", $filename);
-            $extension = $arrayfile[count($arrayfile) - 1];
+            $array = explode(".", $filename);
+            $extension = $array[count($array) - 1];
             if ($extension == "pdf") {
                 $document[count($document)] = $filename;
             }
@@ -269,22 +279,21 @@ class FeedbackController extends AbstractController
         $feedback->setDocument($document);
         $feedback->setImages($images);
 
-        $em = $this->getDoctrine()->getManager();
+        //Save feedback
         $em->persist($feedback);
         $em->flush();
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($feedback, 'json',
-            [AbstractNormalizer::ATTRIBUTES => ['video', 'document', 'images']]);
+        //Serialize the response data
+        $data = $serializer->serialize($feedback, 'json', [
+            AbstractNormalizer::ATTRIBUTES => ['video', 'document', 'images']
+        ]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'feedback'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('feedback'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
-
+/*
     #[Route('/api/feedback/file/{filename}', name: 'feedback_get_file', methods: ['GET'])]
     /**
      * @Route("api/feedback/file/{filename}", name="feedback_get_file", methods={"GET"})
@@ -306,7 +315,7 @@ class FeedbackController extends AbstractController
      * ))
      * @OA\Tag(name="Feedbacks")
      * @Security(name="Bearer")
-     */
+     *//*
     public function getFeedbackFile($filename, S3Client $s3Client) {
         $tipos = array(
             "pdf"  => "application/pdf",
@@ -341,5 +350,5 @@ class FeedbackController extends AbstractController
         $response->headers->set('Content-Disposition', $disposition);
 
         return $response;
-    }
+    }*/
 }

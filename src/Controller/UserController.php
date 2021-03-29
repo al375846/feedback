@@ -4,6 +4,9 @@ namespace App\Controller;
 
 use App\Entity\Apprentice;
 use App\Entity\Expert;
+use App\Entity\Feedback;
+use App\Entity\NoActiveUser;
+use App\Entity\Publication;
 use App\Entity\User;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -21,7 +24,6 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
-use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
 
@@ -33,9 +35,9 @@ class UserController extends AbstractController
         $this->encoder = $encoder;
     }
 
-    #[Route('/api/user/{username}', name: 'user_get', methods: ['GET'])]
+    #[Route('/api/user', name: 'user_get', methods: ['GET'])]
     /**
-     * @Route("/api/user/{username}", name="user_get", methods={"GET"})
+     * @Route("/api/user", name="user_get", methods={"GET"})
      * @OA\Response(response=200, description="Gets a user",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="user", type="object",
@@ -46,45 +48,35 @@ class UserController extends AbstractController
      *     @OA\Property(property="address", type="string"),
      *     @OA\Property(property="phone", type="string")
      * )))
-     * @OA\Response(response=404, description="Not found",
-     *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="error", type="string")
-     * ))
      * @OA\Tag(name="Users")
      * @Security(name="Bearer")
      */
-    public function getUserdata($username): Response
+    public function getUserdata(): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
-        try {
-        $user = $this->getDoctrine()->getRepository(User::class)->findBy(['username' => $username])[0];
-        } catch (\Throwable $e) {
-            $response=array('error'=>'Usuario no existe');
-            return new JsonResponse($response,404);
-        }
+        //Get the user
+        $user = $this->getUser();
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($user, 'json',
-            [AbstractNormalizer::GROUPS => ['profile']]);
+        //Serialize the response data
+        $data = $serializer->serialize($user, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'user'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('user'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
 
-    #[Route('/api/user/{username}', name: 'user_put', methods: ['PUT'])]
+    #[Route('/api/user', name: 'user_put', methods: ['PUT'])]
     /**
-     * @Route("/api/user/{username}", name="user_put", methods={"PUT"})
+     * @Route("/api/user", name="user_put", methods={"PUT"})
      * @OA\Response(response=200, description="Edits a user",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="user", type="object",
@@ -95,7 +87,7 @@ class UserController extends AbstractController
      *     @OA\Property(property="address", type="string"),
      *     @OA\Property(property="phone", type="string")
      * )))
-     * @OA\Response(response=404, description="Not found",
+     * @OA\Response(response=409, description="Username already exists",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="error", type="string")
      * ))
@@ -111,69 +103,74 @@ class UserController extends AbstractController
      * ))
      * @OA\Tag(name="Users")
      * @Security(name="Bearer")
+     * @param Request $request
+     * @return Response
      */
-    public function putUserdata($username, Request $request): Response
+    public function putUserdata(Request $request): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Deserializamos para obtener los datos del objeto
-        $newuser= $serializer->deserialize($request->getContent(), User::class, 'json');
+        //Deserialize to obtain object data
+        $new = $serializer->deserialize($request->getContent(), User::class, 'json');
 
-        //Trabajamos los datos como queramos
+        //Get the doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
 
-        //Obtenemos al usuario
-        try {
-            $olduser = $doctrine->getRepository(User::class)->findBy(['username' => $username])[0];
-        } catch (\Throwable $e) {
-            $response=array('error'=>'Usuario no existe');
-            return new JsonResponse($response,404);
+        //Check if new user is taken
+        $exists = $doctrine->getRepository(User::class)->findOneBy(['username' => $new->getUSername()]);
+        if ($exists != null) {
+            $response=array('error'=>'Username already exists');
+            return new JsonResponse($response,409);
         }
 
+        //Get old user
+        $user = $this->getUser();
+        $username = $user->getUsername();
         $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username' => $username]);
         $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username' => $username]);
 
-        $olduser->setUsername($newuser->getUsername());
+        //Change user data
+        $user->setUsername($new->getUsername());
         if ($apprentice != null) {
-            $apprentice->setUsername($olduser->getUsername());
+            $apprentice->setUsername($user->getUsername());
             $em->persist($apprentice);
         }
         if ($expert != null) {
-            $expert->setUsername($olduser->getUsername());
+            $expert->setUsername($user->getUsername());
             $em->persist($expert);
         }
-        $password = $this->encoder->encodePassword($olduser, $newuser->getPassword());
-        $olduser->setPassword($password);
-        $olduser->setEmail($newuser->getEmail());
-        $olduser->setName($newuser->getName());
-        $olduser->setLastname($newuser->getLastname());
-        $olduser->setAddress($newuser->getAddress());
-        $olduser->setPhone($newuser->getPhone());
+        $password = $this->encoder->encodePassword($user, $new->getPassword());
+        $user->setPassword($password);
+        $user->setEmail($new->getEmail());
+        $user->setName($new->getName());
+        $user->setLastname($new->getLastname());
+        $user->setAddress($new->getAddress());
+        $user->setPhone($new->getPhone());
 
-        $em->persist($olduser);
+        //Save new user
+        $em->persist($user);
         $em->flush();
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($olduser, 'json',
-            [AbstractNormalizer::GROUPS => ['profile']]);
+        //Serialize the response data
+        $data = $serializer->serialize($user, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'user'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('user'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
 
-    #[Route('/api/user/{username}', name: 'user_delete', methods: ['DELETE'])]
+    #[Route('/api/user', name: 'user_delete', methods: ['DELETE'])]
     /**
-     * @Route("/api/user/{username}", name="user_delete", methods={"DELETE"})
+     * @Route("/api/user", name="user_delete", methods={"DELETE"})
      * @OA\Response(response=200, description="Deletes a user",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="deleted", type="boolean")
@@ -185,43 +182,45 @@ class UserController extends AbstractController
      * @OA\Tag(name="Users")
      * @Security(name="Bearer")
      */
-    public function deleteUser($username): Response
+    public function deleteUser(): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
-        $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
+        //Get the doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
 
-        //Obtenemos la sugerencia
-        $user = $doctrine->getRepository(User::class)->findOneBy(['username' => $username]);
-        if ($user == null) {
-            $response=array('error'=>'Usuario no existe');
-            return new JsonResponse($response,404);
-        }
-
+        //Get the user
+        $user = $this->getUser();
+        $username = $user->getUsername();
         $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username' => $username]);
         $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username' => $username]);
 
+        //Prepare for set to non active
+        $nonactive = new NoActiveUser();
+        $nonactive->setUsername($user->getUsername());
+        $nonactive->setPassword($user->getPassword());
+        $nonactive->setEmail($user->getEmail());
+        $nonactive->setName($user->getName());
+        $nonactive->setLastname($user->getLastname());
+        $nonactive->setAddress($user->getAddress());
+        $nonactive->setPhone($user->getPhone());
+        $nonactive->setRoles($user->getRoles());
+
+        //Remove the user
         if ($apprentice != null) {
-            $em->remove($apprentice);
+            $nonactive->seType('apprentice');
+            $apprentice->setUserdata(null);
         }
         if ($expert != null) {
-            $em->remove($expert);
+            $nonactive->seType('expert');
+            $expert->setUserdata(null);
         }
-
+        $em->persist($nonactive);
         $em->remove($user);
         $em->flush();
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'deleted'=>true
-        );
+        //Create the response
+        $response=array('deleted'=>true);
 
         return new JsonResponse($response,200);
     }

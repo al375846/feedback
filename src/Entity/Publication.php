@@ -76,8 +76,8 @@ class Publication
     private $images = [];
 
     /**
-     * @ORM\ManyToOne(targetEntity=Apprentice::class, inversedBy="publications")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\ManyToOne(targetEntity=Apprentice::class, inversedBy="publications", cascade={"remove", "persist"})
+     * @ORM\JoinColumn(nullable=true)
      * @OA\Property(ref=@Model(type=Apprentice::class))
      * @Groups({"publications", "incidences"})
      */

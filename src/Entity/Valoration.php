@@ -19,7 +19,7 @@ class Valoration
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
      * @OA\Property(type="integer")
-     * @Groups({"valorations", "feedbacks"})
+     * @Groups({"ratings", "feedbacks"})
      */
     private $id;
 
@@ -48,7 +48,7 @@ class Valoration
     /**
      * @ORM\Column(type="integer")
      * @OA\Property(type="integer")
-     * @Groups({"valorations", "feedbacks"})
+     * @Groups({"ratings", "feedbacks"})
      */
     private $grade;
 

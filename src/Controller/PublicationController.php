@@ -9,14 +9,12 @@ use App\Service\UploaderService;
 use App\Entity\User;
 use App\Entity\Publication;
 use Aws\S3\S3Client;
-use GuzzleHttp\Psr7\Stream;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
@@ -29,7 +27,6 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
 use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 
 class PublicationController extends AbstractController
@@ -65,63 +62,56 @@ class PublicationController extends AbstractController
      *          @OA\Property(property="name", type="string")),
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="tags", type="array", @OA\Items(type="string")),
-     *     @OA\Property(property="username", type="string"),
      *     @OA\Property(property="date", type="string", format="date-time")
      * ))
      * @OA\Tag(name="Publications")
      * @Security(name="Bearer")
+     * @param Request $request
+     * @return Response
      */
     public function postPublication(Request $request): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Deserializamos para obtener los datos del objeto
-        $publication = $serializer->deserialize($request->getContent(),
-            Publication::class, 'json', [AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']]);
+        //Deserialize to obtain object data
+        $publication = $serializer->deserialize($request->getContent(), Publication::class, 'json');
 
-        $user = $serializer->deserialize($request->getContent(),
-            User::class, 'json', [AbstractNormalizer::ATTRIBUTES => ['username']]);
-
-        //Trabajamos los datos como queramos
+        //Get doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
 
-        //Decidimos la categoria
-        try{
+        //Get category
         $catName = $publication->getCategory()->getName();
-        $category = $doctrine->getRepository(Category::class)->findBy(['name'=>$catName])[0];
+        $category = $doctrine->getRepository(Category::class)->findOneBy(['name'=>$catName]);
+        if ($category == null) {
+            $response=array('error'=>'Category not found');
+            return new JsonResponse($response,404);
+        }
         $publication->setCategory($category);
-        } catch (\Throwable $e) {
-            $response=array('error'=>'Categoria no encontrada');
-            return new JsonResponse($response,404);
-        }
 
-        //Decidimos el aprendiz
-        try {
-        $userdata = $doctrine->getRepository(User::class)->findBy(['username' => $user->getUsername()])[0];
-        $apprentice = $doctrine->getRepository(Apprentice::class)->findBy(['userdata' => $userdata])[0];
+        //Get apprentice
+        $user = $this->getUser();
+        $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['userdata'=>$user]);
         $publication->setApprentice($apprentice);
-        } catch (\Throwable $e) {
-            $response=array('error'=>'Aprendiz no encontrado');
-            return new JsonResponse($response,404);
-        }
-        //Guardamos la publicacion
+
+        //Save publication
         $em->persist($publication);
         $em->flush();
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($publication, 'json',
-            [AbstractNormalizer::GROUPS => ['publications']]);
+        //Serialize the response data
+        $data = $serializer->serialize($publication, 'json', [
+            AbstractNormalizer::GROUPS => ['publications']
+        ]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'publication'=>json_decode($data),
-        );
+        //Create the response
+        $response=array('publication'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -150,24 +140,25 @@ class PublicationController extends AbstractController
      * @Security(name="Bearer")
      */
     public function getPublications(): Response {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
+        //Get publications
         $publications = $this->getDoctrine()->getRepository(Publication::class)->findAll();
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($publications, 'json',
-            [AbstractNormalizer::GROUPS => ['publications']]);
+        //Serialize the response data
+        $data = $serializer->serialize($publications, 'json', [
+            AbstractNormalizer::GROUPS => ['publications']
+        ]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'publications'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('publications'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -199,32 +190,33 @@ class PublicationController extends AbstractController
      * @Security(name="Bearer")
      */
     public function getPublication($id): Response {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
-
+        //Get publication
         $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
         if ($publication == null) {
-            $response=array('error'=>'Publicacion no encontrada');
+            $response=array('error'=>'Publication not found');
             return new JsonResponse($response,404);
         }
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($publication, 'json',
-            [AbstractNormalizer::GROUPS => ['publications'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['id']]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'publication'=>json_decode($data)
-        );
+        //Serialize the response data
+        $data = $serializer->serialize($publication, 'json', [
+            AbstractNormalizer::GROUPS => ['publications']
+        ]);
+
+        //Create the response
+        $response=array('publication'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
-
+/*
     #[Route('/api/publication/file/{filename}', name: 'publication_get_file', methods: ['GET'])]
     /**
      * @Route("/api/publication/file/{filename}", name="publication_get_file", methods={"GET"})
@@ -242,7 +234,7 @@ class PublicationController extends AbstractController
      * )
      * @OA\Tag(name="Publications")
      * @Security(name="Bearer")
-     */
+     *//*
     public function getPublicationFile($filename, S3Client $s3Client) {
         $tipos = array(
             "pdf"  => "application/pdf",
@@ -277,7 +269,7 @@ class PublicationController extends AbstractController
         $response->headers->set('Content-Disposition', $disposition);
 
         return $response;
-    }
+    }*/
 
     #[Route('/api/publication/{id}/file', name: 'publication_post_file', methods: ['POST'])]
     /**
@@ -304,21 +296,23 @@ class PublicationController extends AbstractController
      * @Security(name="Bearer")
      */
     public function postPublicationFile($id, Request $request, UploaderService $uploaderService): Response {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Obtenemos la publicacion
-
+        //Get publication
         $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
         if ($publication == null) {
-            $response=array('error'=>'Publicacion no encontrada');
+            $response=array('error'=>'Publication not found');
             return new JsonResponse($response, 404);
         }
-        //Subimos los archivos
+
+        //Upload files
         $images = $publication->getImages();
         $document = $publication->getDocument();
         $video = $publication->getVideo();
@@ -344,14 +338,13 @@ class PublicationController extends AbstractController
         $em->persist($publication);
         $em->flush();
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($publication, 'json',
-            [AbstractNormalizer::ATTRIBUTES => ['video', 'document', 'images']]);
+        //Serialize the response data
+        $data = $serializer->serialize($publication, 'json', [
+            AbstractNormalizer::ATTRIBUTES => ['video', 'document', 'images']
+        ]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'publication'=>json_decode($data)
-        );
+        //Create the response
+        $response=array('publication'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -380,35 +373,39 @@ class PublicationController extends AbstractController
      * ))
      * @OA\Tag(name="Publications")
      * @Security(name="Bearer")
+     * @param $id
+     * @return Response
      */
     public function getPublicationFeedback($id): Response
     {
-        //Inicialiazamos los normalizadores y los codificadores para serialiar y deserializar
+        //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Trabajamos los datos como queramos
+        //Get doctrine
         $doctrine = $this->getDoctrine();
-        $em = $doctrine->getManager();
-        //Obtenemos la publicacion
+
+        //Get publication
         $publication = $doctrine->getRepository(Publication::class)->find($id);
         if ($publication == null) {
-            $response=array('error'=>'Publicacion no existe');
+            $response=array('error'=>'Publication not found');
             return new JsonResponse($response,404);
         }
         $feedbacks = $doctrine->getRepository(Feedback::class)->findBy(['publication' => $publication]);
 
-        //Serializamos para poder mandar el objeto en la respuesta
-        $data = $serializer->serialize($feedbacks, 'json',
-            [AbstractNormalizer::GROUPS => ['feedbacks'], AbstractNormalizer::IGNORED_ATTRIBUTES => ['publication']]);
+        //Serialize the response data
+        $data = $serializer->serialize($feedbacks, 'json', [
+            AbstractNormalizer::GROUPS => ['feedbacks'],
+            AbstractNormalizer::IGNORED_ATTRIBUTES => ['publication']
+        ]);
 
-        //Puede tener los atributos que se quieran
-        $response=array(
-            'feedbacks'=>json_decode($data),
-        );
+        //Create the response
+        $response=array('feedbacks'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }

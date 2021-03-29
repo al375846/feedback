@@ -25,7 +25,7 @@ class Expert
 
     /**
      * @ORM\OneToOne(targetEntity=User::class, cascade={"persist", "remove"})
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=true)
      * @OA\Property(ref=@Model(type=User::class))
      */
     private $userdata;
@@ -37,7 +37,8 @@ class Expert
     private $favCategories;
 
     /**
-     * @ORM\OneToMany(targetEntity=Feedback::class, mappedBy="expert")
+     * @ORM\OneToMany(targetEntity=Feedback::class, mappedBy="expert", cascade={"remove", "persist"})
+     * @ORM\JoinColumn(nullable=true)
      */
     private $feedback;
 
@@ -70,7 +71,7 @@ class Expert
         return $this->userdata;
     }
 
-    public function setUserdata(User $userdata): self
+    public function setUserdata(?User $userdata): self
     {
         $this->userdata = $userdata;
 

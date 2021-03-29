@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Apprentice;
 use App\Entity\Expert;
+use App\Entity\NoActiveUser;
 use App\Entity\User;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -32,9 +33,9 @@ class RegistrationController extends AbstractController
         $this->encoder = $encoder;
     }
 
-    #[Route('/api/register/type/{type}', name: 'register', methods: ['POST'])]
+    #[Route('/api/register/{type}', name: 'register', methods: ['POST'])]
     /**
-     * @Route("/api/register/type/{type}", name="register", methods={"POST"})
+     * @Route("/api/register/{type}", name="register", methods={"POST"})
      * @OA\Response(response=200, description="Adds an expert or apprentice user",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="user", type="object",
@@ -128,10 +129,10 @@ class RegistrationController extends AbstractController
         return new JsonResponse($response, 200);
     }
 
-    #[Route('/api/register/admin', name: 'register_admin', methods: ['POST'])]
+    #[Route('/api/recovery', name: 'recovery', methods: ['POST'])]
     /**
-     * @Route("/api/register/admin", name="register_admin", methods={"POST"})
-     * @OA\Response(response=200, description="Adds an admin user",
+     * @Route("/api/recovery", name="recovery", methods={"POST"})
+     * @OA\Response(response=200, description="Adds an expert or apprentice user",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="user", type="object",
      *     @OA\Property(property="username", type="string"),
@@ -145,30 +146,23 @@ class RegistrationController extends AbstractController
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="error", type="string")
      * ))
-     * @OA\Response(response=401, description="Unauthorized",
+     * @OA\Response(response=400, description="Bad request",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="error", type="string")
      * ))
      * @OA\RequestBody(description="Input data format",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="username", type="string"),
-     *     @OA\Property(property="password", type="string"),
-     *     @OA\Property(property="email", type="string"),
-     *     @OA\Property(property="name", type="string"),
-     *     @OA\Property(property="lastname", type="string"),
-     *     @OA\Property(property="address", type="string"),
-     *     @OA\Property(property="phone", type="string")
+     *     @OA\Property(property="password", type="string")
      * ))
      * @OA\Tag(name="Registration")
-     * @Security(name="Bearer")
+     * @Security()
+     * @param $type
      * @param Request $request
      * @return Response
      */
-    public function registerAdmin(Request $request): Response
+    public function recovery(Request $request): Response
     {
-        //Only admins can register admins
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
-
         //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
@@ -182,23 +176,36 @@ class RegistrationController extends AbstractController
         $user = $serializer->deserialize($request->getContent(),User::class, 'json');
         $password = $this->encoder->encodePassword($user, $user->getPassword());
         $user->setPassword($password);
+        $username = $user->getUsername();
 
         //Get the doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
 
-        //Check if user already exists
-        $old = $doctrine->getRepository(User::class)->findOneBy(['username'=>$user->getUSername()]);
-        if ($old != null) {
-            $response=array('error'=>'User already exists');
-            return new JsonResponse($response,409);
+        //Get user
+        $old = $doctrine->getRepository(NoActiveUser::class)->findOneBy(['username'=>$username]);
+
+        //Set userdata
+        $user->setEmail($old->getEmail());
+        $user->setName($old->getName());
+        $user->setLastname($old->getLastname());
+        $user->setAddress($old->getAddress());
+        $user->setPhone($old->getPhone());
+        $user->setRoles($old->getRoles());
+
+        if ($old->getType() == 'apprentice') {
+            $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username'=>$username]);
+            $apprentice->setUserdata($user);
+            $em->persist($apprentice);
         }
-
-        //Set type and roles
-        $user->setRoles(['ROLE_ADMIN']);
-
+        if ($old->getType() == 'expert') {
+            $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username'=>$username]);
+            $expert->setUserdata($user);
+            $em->persist($expert);
+        }
         //Save the user
         $em->persist($user);
+        $em->remove($old);
         $em->flush();
 
         //Serialize the response data

@@ -55,42 +55,48 @@ class FileController extends AbstractController
      * )
      * @OA\Tag(name="Files")
      * @Security(name="Bearer")
+     * @param $filename
+     * @param S3Client $s3Client
+     * @return Response
      */
-    public function getFeedbackFile($filename, S3Client $s3Client) {
-        $tipos = array(
+    public function getFeedbackFile($filename, S3Client $s3Client): Response {
+        //Prepare the request
+        $mimes = array(
             "pdf"  => "application/pdf",
             "jpeg"  => "image/jpeg",
             "jpg"  => "image/jpg",
             "png"  => "image/png",
             "mp4"  => "video/mp4",
         );
-        $arrayfile = explode(".", $filename);
-        $extension = $arrayfile[count($arrayfile) - 1];
+        $file = explode(".", $filename);
+        $extension = $file[count($file) - 1];
         $disposition = HeaderUtils::makeDisposition(
             HeaderUtils::DISPOSITION_ATTACHMENT,
             $filename
         );
+
+        //Get the file
         try {
         $result = $s3Client->getObject([
             'Bucket' => 'feedback-uji',
             'Key' => 'files/'. $filename,
-            'ResponseContentType' => $tipos[$extension],
+            'ResponseContentType' => $mimes[$extension],
             'ResponseContentDisposition' => $disposition,
         ]);
         } catch (\Throwable $e) {
-            $response=array('error'=>'Archivo no existe');
+            $response=array('error'=>'File not found');
             return new JsonResponse($response,404);
         }
+
+        //Get the resource
         $stream = $result['Body']->detach();
 
+        //Create the response
         $response = new StreamedResponse(function() use ($stream) {
             $outputStream = fopen('php://output', 'wb');
             stream_copy_to_stream($stream, $outputStream);
-            ob_flush();
-            flush();
         });
-
-        $response->headers->set('Content-Type', $tipos[$extension]);
+        $response->headers->set('Content-Type', $mimes[$extension]);
         $response->headers->set('Content-Disposition', $disposition);
 
         return $response;

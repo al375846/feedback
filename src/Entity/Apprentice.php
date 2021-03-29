@@ -26,7 +26,7 @@ class Apprentice
 
     /**
      * @ORM\OneToOne(targetEntity=User::class, cascade={"persist", "remove"})
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=true)
      * @OA\Property(ref=@Model(type=User::class))
      *
      */
@@ -59,7 +59,7 @@ class Apprentice
         return $this->userdata;
     }
 
-    public function setUserdata(User $userdata): self
+    public function setUserdata(?User $userdata): self
     {
         $this->userdata = $userdata;
 
