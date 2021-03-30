@@ -7,6 +7,7 @@ use App\Entity\Expert;
 use App\Entity\ExpertCategories;
 use App\Entity\Feedback;
 use App\Entity\User;
+use App\Service\SerializerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,6 +27,16 @@ use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
 use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
 class ExpertController extends AbstractController
 {
+    /**
+     * @var Serializer
+     */
+    private Serializer $serializer;
+
+    public function __construct(SerializerService $serializerService)
+    {
+        $this->serializer = $serializerService->getSerializer();
+    }
+
     #[Route('/api/expert/category/{id}', name: 'expert_post_favcat', methods: ['POST'])]
     /**
      * @Route("/api/expert/category/{id}", name="expert_post_favcat", methods={"POST"})

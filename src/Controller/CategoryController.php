@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Service\SerializerService;
 use App\Utils\CategoryTree;
 use App\Entity\Category;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,6 +26,15 @@ use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
 
 class CategoryController extends AbstractController
 {
+    /**
+     * @var Serializer
+     */
+    private Serializer $serializer;
+
+    public function __construct(SerializerService $serializerService)
+    {
+        $this->serializer = $serializerService->getSerializer();
+    }
 
     #[Route('/api/category', name: 'category_post', methods: ['POST'])]
     /**
@@ -70,16 +80,16 @@ class CategoryController extends AbstractController
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
         //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        /*$encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
         $normalizers = [
             new DateTimeNormalizer(),
             new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
         ];
-        $serializer = new Serializer($normalizers, $encoders);
+        $serializer = new Serializer($normalizers, $encoders);*/
 
         //Deserialize to obtain object data
-        $category = $serializer->deserialize($request->getContent(), Category::class, 'json');
+        $category = $this->serializer->deserialize($request->getContent(), Category::class, 'json');
 
         //Get the doctrine
         $doctrine = $this->getDoctrine();
@@ -102,7 +112,7 @@ class CategoryController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($category, 'json', [
+        $data = $this->serializer->serialize($category, 'json', [
             AbstractNormalizer::GROUPS => ['categories']
         ]);
 

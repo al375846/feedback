@@ -2,10 +2,12 @@
 
 namespace App\Controller;
 
-use App\Utils\ActiveExperts;
-use App\Utils\RatedExperts;
-use App\Utils\ActiveCategories;
+use App\Entity\Category;
+use App\Entity\Expert;
+use App\Service\SerializerService;
 use Doctrine\Common\Annotations\AnnotationReader;
+use JetBrains\PhpStorm\Pure;
+use phpDocumentor\Reflection\Types\This;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,6 +17,7 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
 use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -23,6 +26,16 @@ use OpenApi\Annotations as OA;
 
 class RankingController extends AbstractController
 {
+    /**
+     * @var Serializer
+     */
+    private Serializer $serializer;
+
+    public function __construct(SerializerService $serializerService)
+    {
+        $this->serializer = $serializerService->getSerializer();
+    }
+
     #[Route('/api/ranking/rated/experts', name: 'rated_experts', methods: ['GET'])]
     /**
      * @Route("/api/ranking/rated/experts", name="rated_experts", methods={"GET"})
@@ -30,30 +43,35 @@ class RankingController extends AbstractController
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="ratedexperts", type="array", @OA\Items(
      *     @OA\Property(property="id", type="integer"),
-     *     @OA\Property(property="avg", type="string"),
+     *     @OA\Property(property="rate", type="string"),
      *     @OA\Property(property="username", type="string")
      * ))))
      * @OA\Tag(name="Rankings")
      * @Security(name="Bearer")
-     * @param RatedExperts $ratedExperts
      * @return Response
      */
-    public function getRatedExperts(RatedExperts $ratedExperts): Response
+    public function getRatedExperts(): Response
     {
         //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        /*$encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
         $normalizers = [
             new DateTimeNormalizer(),
             new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
         ];
-        $serializer = new Serializer($normalizers, $encoders);
+        $serializer = new Serializer($normalizers, $encoders);*/
 
         //Get experts
-        $experts = $ratedExperts->buildRatedExperts();
+        $experts = $this->getDoctrine()->getRepository(Expert::class)->findRatedExperts();
+        $rated = [];
+        foreach ($experts as $expert) {
+            $rate = round($expert['rate'], 2);
+            $expert['rate'] = $rate;
+            $rated[] = $expert;
+        }
 
         //Serialize the response data
-        $data = $serializer->serialize($experts, 'json');
+        $data = $this->serializer->serialize($rated, 'json');
 
         //Create the response
         $response=array('ratedexperts'=>json_decode($data));
@@ -72,28 +90,28 @@ class RankingController extends AbstractController
      * ))))
      * @OA\Tag(name="Rankings")
      * @Security(name="Bearer")
-     * @param ActiveExperts $activeExperts
      * @return Response
      */
-    public function getActiveExperts(ActiveExperts $activeExperts): Response
+    public function getActiveExperts(): Response
     {
         //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        /*$encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
         $normalizers = [
             new DateTimeNormalizer(),
             new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
         ];
-        $serializer = new Serializer($normalizers, $encoders);
+        $serializer = new Serializer($normalizers, $encoders);*/
 
         //Get data
-        $experts = $activeExperts->buildActiveExperts();
+        //$experts = $activeExperts->buildActiveExperts();
+        $experts = $this->getDoctrine()->getRepository(Expert::class)->findActiveExperts();
 
         //Serialize the response data
-        $data = $serializer->serialize($experts, 'json');
+        $data = $this->serializer->serialize($experts, 'json');
 
         //Create the response
-        $response=array('ratedexperts'=>json_decode($data));
+        $response=array('activeexperts'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -110,25 +128,24 @@ class RankingController extends AbstractController
      * ))))
      * @OA\Tag(name="Rankings")
      * @Security(name="Bearer")
-     * @param ActiveCategories $activeCategories
      * @return Response
      */
-    public function getActiveCategories(ActiveCategories $activeCategories): Response
+    public function getActiveCategories(): Response
     {
         //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        /*$encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
         $normalizers = [
             new DateTimeNormalizer(),
             new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
         ];
-        $serializer = new Serializer($normalizers, $encoders);
+        $serializer = new Serializer($normalizers, $encoders);*/
 
         //Get data
-        $categories = $activeCategories->buildActiveCategories();
+        $categories = $this->getDoctrine()->getRepository(Category::class)->findActiveCategories();
 
         //Serialize the response data
-        $data = $serializer->serialize($categories, 'json');
+        $data = $this->serializer->serialize($categories, 'json');
 
         //Create the response
         $response=array('activecategories'=>json_decode($data));

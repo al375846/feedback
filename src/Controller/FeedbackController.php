@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Expert;
 use App\Entity\Feedback;
+use App\Service\SerializerService;
 use App\Service\UploaderService;
 use App\Entity\User;
 use Aws\S3\S3Client;
@@ -29,6 +30,16 @@ use App\Entity\Publication;
 
 class FeedbackController extends AbstractController
 {
+    /**
+     * @var Serializer
+     */
+    private Serializer $serializer;
+
+    public function __construct(SerializerService $serializerService)
+    {
+        $this->serializer = $serializerService->getSerializer();
+    }
+
     #[Route('/api/feedback/publication/{id}', name: 'feedback_post', methods: ['POST'])]
     /**
      * @Route("/api/feedback/publication/{id}", name="feedback_post", methods={"POST"})
@@ -64,16 +75,16 @@ class FeedbackController extends AbstractController
     public function postFeedback($id, Request $request): Response
     {
         //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        /*$encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
         $normalizers = [
             new DateTimeNormalizer(),
             new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
         ];
-        $serializer = new Serializer($normalizers, $encoders);
+        $serializer = new Serializer($normalizers, $encoders);*/
 
         //Deserialize to obtain object data
-        $feedback = $serializer->deserialize($request->getContent(), Feedback::class, 'json');
+        $feedback = $this->serializer->deserialize($request->getContent(), Feedback::class, 'json');
 
         //Get doctrine
         $doctrine = $this->getDoctrine();
@@ -97,7 +108,7 @@ class FeedbackController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($feedback, 'json', [
+        $data = $this->serializer->serialize($feedback, 'json', [
             AbstractNormalizer::GROUPS => ['feedbacks']
         ]);
 
@@ -209,7 +220,6 @@ class FeedbackController extends AbstractController
     #[Route('/api/feedback/{id}', name: 'feedback_put', methods: ['PUT'])]
     /**
      * @Route("/api/feedback/{id}", name="feedback_put", methods={"PUT"})
-     * @Route("/api/feedback/publication/{id}", name="feedback_post", methods={"POST"})
      * @OA\Response(response=200, description="Adds a feedback",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="feedback", type="object",

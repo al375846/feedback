@@ -19,22 +19,43 @@ class ExpertRepository extends ServiceEntityRepository
         parent::__construct($registry, Expert::class);
     }
 
-    // /**
-    //  * @return Expert[] Returns an array of Expert objects
-    //  */
-    /*
-    public function findByExampleField($value)
-    {
-        return $this->createQueryBuilder('e')
-            ->andWhere('e.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('e.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
+    /**
+    * @return Expert[] Returns an array of Expert objects
     */
+
+    public function findRatedExperts(): array
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQueryBuilder()
+            ->select("e.id, AVG(v.grade) as rate, e.username")
+            ->from("App\Entity\Valoration", "v")
+            ->leftJoin("v.expert", "e")
+            ->groupBy("e.id")
+            ->orderBy("rate", 'DESC')
+            ->getQuery();
+
+        return $query->getResult();
+    }
+
+    /**
+     * @return Expert[] Returns an array of Expert objects
+     */
+
+    public function findActiveExperts(): array
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQueryBuilder()
+            ->select("e.id, e.username")
+            ->from("App\Entity\Feedback", "f")
+            ->leftJoin("f.expert", "e")
+            ->groupBy("e.id")
+            ->orderBy("COUNT(f.id)", 'DESC')
+            ->getQuery();
+
+        return $query->getResult();
+    }
 
     /*
     public function findOneBySomeField($value): ?Expert
