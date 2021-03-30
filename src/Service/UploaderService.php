@@ -91,4 +91,31 @@ class UploaderService {
         return [$mime, $disposition, $stream];
     }
 
+    public function deleteFile($filename): bool
+    {
+
+        //Prepare the request
+        $file = explode(".", $filename);
+        $extension = $file[count($file) - 1];
+        $mime = $this->mimes[$extension];
+        $disposition = HeaderUtils::makeDisposition(
+            HeaderUtils::DISPOSITION_ATTACHMENT,
+            $filename
+        );
+
+        //Get the file
+        try {
+            $result = $this->s3Client->deleteObject([
+                'Bucket' => 'feedback-uji',
+                'Key' => 'files/'. $filename,
+                'ResponseContentType' => $mime,
+                'ResponseContentDisposition' => $disposition,
+            ]);
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        return true;
+    }
+
 }

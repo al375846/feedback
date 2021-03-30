@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Category;
 use App\Entity\Expert;
 use App\Entity\ExpertCategories;
+use App\Entity\Feedback;
 use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -271,5 +272,72 @@ class ExpertController extends AbstractController
         $response=array('deleted'=>true);
 
         return new JsonResponse($response,200);
+    }
+
+    #[Route('/api/expert/feedback', name: 'expert_get_feedback', methods: ['GET'])]
+    /**
+     * @Route("/api/expert/feedback", name="expert_get_feedback", methods={"GET"})
+     * @OA\Response(response=200, description="Gets alls feedbacks of an expert",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="feedbacks", type="array", @OA\Items(type="object",
+     *     @OA\Property(property="id", type="integer"),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="valoration", type="object",
+     *          @OA\Property(property="id", type="integer"),
+     *          @OA\Property(property="grade", type="integer")),
+     *     @OA\Property(property="date", type="string", format="date-time")
+     * ))))
+     * @OA\Response(response=401, description="Unauthorized",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Response(response=409, description="Conflict",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Tag(name="Experts")
+     * @Security(name="Bearer")
+     * @return Response
+     */
+    public function getPublicationsUser(): Response
+    {
+        //Initialize encoders and normalizer to serialize and deserialize
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Get the doctrine
+        $doctrine = $this->getDoctrine();
+
+        //Get the expert
+        $username = $this->getUser()->getUsername();
+        $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username'=>$username]);
+
+        //Check if the user is an apprentice
+        if ($expert == null) {
+            $response=array('error'=>'The user is not an expert');
+            return new JsonResponse($response, 409);
+        }
+
+        //Get feedbacks
+        $feedbacks = $doctrine->getRepository(Feedback::class)->findBy(['expert'=>$expert]);
+
+        //Serialize the response data
+        $data = $serializer->serialize($feedbacks, 'json', [
+            AbstractNormalizer::GROUPS => ['feedbacks'],
+            AbstractNormalizer::IGNORED_ATTRIBUTES => ['expert']
+        ]);
+
+        //Create the response
+        $response=array('feedbacks'=>json_decode($data));
+
+        return new JsonResponse($response, 200);
     }
 }

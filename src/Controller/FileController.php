@@ -6,6 +6,7 @@ use App\Entity\Feedback;
 use App\Service\UploaderService;
 use App\Entity\Publication;
 use Aws\S3\S3Client;
+use phpDocumentor\Reflection\Types\This;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -56,7 +57,6 @@ class FileController extends AbstractController
      * @OA\Tag(name="Files")
      * @Security(name="Bearer")
      * @param $filename
-     * @param S3Client $s3Client
      * @return Response
      */
     public function getFeedbackFile($filename): Response {
@@ -225,6 +225,112 @@ class FileController extends AbstractController
         return new JsonResponse($response, 200);
     }
 
+    #[Route('/api/file/{filename}/feedback/{id}', name: 'delete_feedback_file', methods: ['DELETE'])]
+    /**
+     * @Route("/api/file/{filename}/feedback/{id}", name="delete_feedback_file", methods={"DELETE"})
+     * @OA\Response(response=200, description="Deletes a file of a feedback",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="deleted", type="boolean")
+     * ))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Tag(name="Files")
+     * @Security(name="Bearer")
+     * @param $filename
+     * @param $id
+     * @return Response
+     */
+    public function deleteFeedbackFile($filename, $id): Response {
+        //Get the feedback
+        $feedback = $this->getDoctrine()->getRepository(Feedback::class)->find($id);
+        if ($feedback == null) {
+            $response=array('error'=>'Feedback not found');
+            return new JsonResponse($response,404);
+        }
+
+        //Delete files
+        $result = $this->deletePrepare(
+            $feedback->getDocument(),
+            $feedback->getVideo(),
+            $feedback->getImages(),
+            $filename
+        );
+
+        //Check if the file has been deleted
+        if (!$result[3]) {
+            $response=array('error'=>'File not found');
+            return new JsonResponse($response,404);
+        }
+
+        $feedback->setVideo($result[1]);
+        $feedback->setDocument($result[0]);
+        $feedback->setImages($result[2]);
+
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($feedback);
+        $em->flush();
+
+        //Create the response
+        $response=array('deleted'=>true);
+
+        return new JsonResponse($response,200);
+    }
+
+    #[Route('/api/file/{filename}/publication/{id}', name: 'delete_publication_file', methods: ['DELETE'])]
+    /**
+     * @Route("/api/file/{filename}/publication/{id}", name="delete_publication_file", methods={"DELETE"})
+     * @OA\Response(response=200, description="Deletes a file of a publication",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="deleted", type="boolean")
+     * ))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Tag(name="Files")
+     * @Security(name="Bearer")
+     * @param $filename
+     * @param $id
+     * @return Response
+     */
+    public function deletePublicationFile($filename, $id): Response {
+        //Get the publication
+        $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
+        if ($publication == null) {
+            $response=array('error'=>'Feedback not found');
+            return new JsonResponse($response,404);
+        }
+
+        //Delete files
+        $result = $this->deletePrepare(
+            $publication->getDocument(),
+            $publication->getVideo(),
+            $publication->getImages(),
+            $filename
+        );
+
+        //Check if the file has been deleted
+        if (!$result[3]) {
+            $response=array('error'=>'File not found');
+            return new JsonResponse($response,404);
+        }
+
+        $publication->setVideo($result[1]);
+        $publication->setDocument($result[0]);
+        $publication->setImages($result[2]);
+
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($publication);
+        $em->flush();
+
+        //Create the response
+        $response=array('deleted'=>true);
+
+        return new JsonResponse($response,200);
+    }
+
     private function uploadPrepare($document, $video, $images, $files): array
     {
         foreach($files as $file) {
@@ -243,5 +349,31 @@ class FileController extends AbstractController
         }
 
         return [$document, $video, $images];
+    }
+
+    private function deletePrepare($document, $video, $images, $filename): array
+    {
+        if (in_array($filename, $document)) {
+            $deleted = $this->uploader->deleteFile($filename);
+            $index = array_search($filename, $document);
+            unset($document[$index]);
+            $document = array_values($document);
+        }
+        elseif (in_array($filename, $video)) {
+            $deleted = $this->uploader->deleteFile($filename);
+            $index = array_search($filename, $video);
+            unset($video[$index]);
+            $video = array_values($video);
+        }
+        elseif (in_array($filename, $images)) {
+            $deleted = $this->uploader->deleteFile($filename);
+            $index = array_search($filename, $images);
+            unset($images[$index]);
+            $images = array_values($images);
+        }
+        else {
+            $deleted = false;
+        }
+        return [$document, $video, $images, $deleted];
     }
 }
