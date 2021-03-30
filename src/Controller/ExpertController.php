@@ -185,8 +185,10 @@ class ExpertController extends AbstractController
      * ))
      * @OA\Tag(name="Experts")
      * @Security(name="Bearer")
+     * @param $id
+     * @return Response
      */
-    public function getOneFavCategory($username, $id): Response
+    public function getOneFavCategory($id): Response
     {
         //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
