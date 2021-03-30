@@ -4,7 +4,6 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
-    files_directory: '%kernel.project_dir%/public/uploads/files'
     app.uploads_base_url: 'https://%env(AWS_S3_BUCKET_NAME)%.s3.%env(AWS_S3_REGION)%.amazonaws.com'
 services:
     # default configuration for services in *this* file
@@ -32,7 +31,6 @@ services:
     # please note that last definitions always *replace* previous ones
     App\Service\UploaderService:
         arguments:
-            $targetDirectory: '%files_directory%'
             $publicAssetBaseUrl: '%app.uploads_base_url%'
 
     Aws\S3\S3Client:

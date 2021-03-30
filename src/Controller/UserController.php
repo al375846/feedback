@@ -117,19 +117,9 @@ class UserController extends AbstractController
         ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Deserialize to obtain object data
-        $new = $serializer->deserialize($request->getContent(), User::class, 'json');
-
         //Get the doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
-
-        //Check if new user is taken
-        $exists = $doctrine->getRepository(User::class)->findOneBy(['username' => $new->getUSername()]);
-        if ($exists != null) {
-            $response=array('error'=>'Username already exists');
-            return new JsonResponse($response,409);
-        }
 
         //Get old user
         $user = $this->getUser();
@@ -137,8 +127,19 @@ class UserController extends AbstractController
         $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username' => $username]);
         $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username' => $username]);
 
+        //Deserialize to obtain object data
+        $serializer->deserialize($request->getContent(), User::class, 'json', [
+            AbstractNormalizer::OBJECT_TO_POPULATE => $user
+        ]);
+
+        //Check if new user is taken
+        $exists = $doctrine->getRepository(User::class)->findOneBy(['username' => $user->getUSername()]);
+        if ($exists != null) {
+            $response=array('error'=>'Username already exists');
+            return new JsonResponse($response,409);
+        }
+
         //Change user data
-        $user->setUsername($new->getUsername());
         if ($apprentice != null) {
             $apprentice->setUsername($user->getUsername());
             $em->persist($apprentice);
@@ -147,13 +148,8 @@ class UserController extends AbstractController
             $expert->setUsername($user->getUsername());
             $em->persist($expert);
         }
-        $password = $this->encoder->encodePassword($user, $new->getPassword());
+        $password = $this->encoder->encodePassword($user, $user->getPassword());
         $user->setPassword($password);
-        $user->setEmail($new->getEmail());
-        $user->setName($new->getName());
-        $user->setLastname($new->getLastname());
-        $user->setAddress($new->getAddress());
-        $user->setPhone($new->getPhone());
 
         //Save new user
         $em->persist($user);

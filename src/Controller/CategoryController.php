@@ -79,9 +79,7 @@ class CategoryController extends AbstractController
         $serializer = new Serializer($normalizers, $encoders);
 
         //Deserialize to obtain object data
-        $category = $serializer->deserialize($request->getContent(), Category::class, 'json', [
-            AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']
-        ]);
+        $category = $serializer->deserialize($request->getContent(), Category::class, 'json');
 
         //Get the doctrine
         $doctrine = $this->getDoctrine();
@@ -234,6 +232,102 @@ class CategoryController extends AbstractController
 
         //Create the response
         $response=array('deleted'=>true);
+
+        return new JsonResponse($response,200);
+    }
+
+    #[Route('/api/category/{id}', name: 'category_put', methods: ['PUT'])]
+    /**
+     * @Route("/api/category/{id}", name="category_put", methods={"PUT"})
+     * @OA\Response(response=200, description="Edits a category",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="category", type="object",
+     *     @OA\Property(property="id", type="integer"),
+     *     @OA\Property(property="name", type="string"),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="parent", type="object", nullable="true",
+     *          @OA\Property(property="id", type="integer"),
+     *          @OA\Property(property="name", type="string"),
+     *          @OA\Property(property="description", type="string"))
+     * )))
+     * @OA\Response(response=401, description="Unauthorized",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Response(response=403, description="Forbbiden",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\RequestBody(description="Input data format",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="name", type="string"),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="parent", type="object", nullable="true",
+     *          @OA\Property(property="name", type="string"))
+     * ))
+     * @OA\Tag(name="Categories")
+     * @Security(name="Bearer")
+     * @param $id
+     * @param Request $request
+     * @return Response
+     */
+    public function putCategory($id, Request $request): Response
+    {
+        //Only admins can edit categories
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        //Initialize encoders and normalizer to serialize and deserialize
+        $encoders = [new XmlEncoder(), new JsonEncoder()];
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
+        ];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //Get the doctrine
+        $doctrine = $this->getDoctrine();
+        $em = $doctrine->getManager();
+
+        //Get the category
+        $category = $doctrine->getRepository(Category::class)->find($id);
+        if ($category == null) {
+            $response=array('error'=>'Category not found');
+            return new JsonResponse($response,404);
+        }
+
+        //Deserialize to obtain object data
+        $category = $serializer->deserialize($request->getContent(), Category::class, 'json', [
+            AbstractNormalizer::OBJECT_TO_POPULATE => $category
+        ]);
+
+        //Get the parent category
+        $parentName = $category->getParent();
+        if($parentName != null) {
+            $parentName = $parentName->getName();
+            $parent = $doctrine->getRepository(Category::class)->findOneBy(['name'=>$parentName]);
+            if ($parent == null) {
+                $response=array('error'=>'Parent category not found');
+                return new JsonResponse($response,404);
+            }
+            $category->setParent($parent);
+        }
+
+        //Save the category
+        $em->persist($category);
+        $em->flush();
+
+        //Serialize the response data
+        $data = $serializer->serialize($category, 'json', [
+            AbstractNormalizer::GROUPS => ['categories']
+        ]);
+
+        //Create the response
+        $response=array('category'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
