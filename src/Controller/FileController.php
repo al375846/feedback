@@ -3,10 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\Feedback;
+use App\Service\SerializerService;
 use App\Service\UploaderService;
 use App\Entity\Publication;
-use Aws\S3\S3Client;
-use phpDocumentor\Reflection\Types\This;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,16 +14,8 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
-use Symfony\Component\Serializer\Serializer;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Doctrine\Common\Annotations\AnnotationReader;
-use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
-use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
+use Symfony\Component\Serializer\Serializer;
 
 class FileController extends AbstractController
 {
@@ -33,10 +24,15 @@ class FileController extends AbstractController
      * @var UploaderService
      */
     private UploaderService $uploader;
+    /**
+     * @var Serializer
+     */
+    private Serializer $serializer;
 
-    public function __construct(UploaderService $uploaderService)
+    public function __construct(UploaderService $uploaderService, SerializerService $serializerService)
     {
         $this->uploader = $uploaderService;
+        $this->serializer = $serializerService->getSerializer();
     }
 
     #[Route('/api/file/{filename}', name: 'get_file', methods: ['GET'])]
@@ -108,16 +104,8 @@ class FileController extends AbstractController
      * @param Request $request
      * @return Response
      */
-    public function postFeedbackFile($id, Request $request): Response {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
+    public function postFeedbackFile($id, Request $request): Response
+    {
         //Get doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
@@ -145,7 +133,7 @@ class FileController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($feedback, 'json', [
+        $data = $this->serializer->serialize($feedback, 'json', [
             AbstractNormalizer::ATTRIBUTES => ['video', 'document', 'images']
         ]);
 
@@ -182,16 +170,8 @@ class FileController extends AbstractController
      * @param Request $request
      * @return Response
      */
-    public function postPublicationFile($id, Request $request): Response {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
+    public function postPublicationFile($id, Request $request): Response
+    {
         //Get publication
         $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
         if ($publication == null) {
@@ -215,7 +195,7 @@ class FileController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($publication, 'json', [
+        $data = $this->serializer->serialize($publication, 'json', [
             AbstractNormalizer::ATTRIBUTES => ['video', 'document', 'images']
         ]);
 

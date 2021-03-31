@@ -3,31 +3,31 @@
 namespace App\Controller;
 
 use App\Entity\Apprentice;
-use App\Entity\Expert;
 use App\Entity\Feedback;
-use App\Entity\Publication;
-use App\Entity\User;
 use App\Entity\Valoration;
-use Doctrine\Common\Annotations\AnnotationReader;
+use App\Service\SerializerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Routing\Annotation\Route;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
-use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
 class ValorationController extends AbstractController
 {
+    /**
+     * @var Serializer
+     */
+    private Serializer $serializer;
+
+    public function __construct(SerializerService $serializerService)
+    {
+        $this->serializer = $serializerService->getSerializer();
+    }
+
     #[Route('/api/rating/feedback/{id}', name: 'rating_post', methods: ['POST'])]
     /**
      * @Route("/api/rating/feedback/{id}", name="rating_post", methods={"POST"})
@@ -57,18 +57,9 @@ class ValorationController extends AbstractController
      */
     public function postRating($id, Request $request): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Deserialize to obtain object data
         $user = $this->getUser();
-        $rating = $serializer->deserialize($request->getContent(), Valoration::class, 'json');
+        $rating = $this->serializer->deserialize($request->getContent(), Valoration::class, 'json');
 
         //Get the doctrine
         $doctrine = $this->getDoctrine();
@@ -110,7 +101,7 @@ class ValorationController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($rating, 'json', [
+        $data = $this->serializer->serialize($rating, 'json', [
             AbstractNormalizer::GROUPS => ['ratings']
         ]);
 
@@ -147,18 +138,10 @@ class ValorationController extends AbstractController
      * @param Request $request
      * @return Response
      */
-    public function putRating($id, Request $request): Response {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
+    public function putRating($id, Request $request): Response
+    {
         //Deserialize to obtain object data
-        $new = $serializer->deserialize($request->getContent(), Valoration::class, 'json');
+        $new = $this->serializer->deserialize($request->getContent(), Valoration::class, 'json');
 
         //Get doctrine
         $doctrine = $this->getDoctrine();
@@ -177,7 +160,7 @@ class ValorationController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($old, 'json', [
+        $data = $this->serializer->serialize($old, 'json', [
             AbstractNormalizer::GROUPS => ['ratings']
         ]);
 

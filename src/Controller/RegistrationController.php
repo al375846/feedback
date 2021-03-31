@@ -6,31 +6,33 @@ use App\Entity\Apprentice;
 use App\Entity\Expert;
 use App\Entity\NoActiveUser;
 use App\Entity\User;
-use Doctrine\Common\Annotations\AnnotationReader;
+use App\Service\SerializerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
-use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
 
 class RegistrationController extends AbstractController
 {
+    /**
+     * @var Serializer
+     */
+    private Serializer $serializer;
+    /**
+     * @var UserPasswordEncoderInterface
+     */
+    private UserPasswordEncoderInterface $encoder;
 
-    public function __construct(UserPasswordEncoderInterface $encoder)
+    public function __construct(UserPasswordEncoderInterface $encoder, SerializerService $serializerService)
     {
         $this->encoder = $encoder;
+        $this->serializer = $serializerService->getSerializer();
     }
 
     #[Route('/api/register/{type}', name: 'register', methods: ['POST'])]
@@ -72,17 +74,8 @@ class RegistrationController extends AbstractController
      */
     public function register($type, Request $request): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Deserialize to obtain object data
-        $user = $serializer->deserialize($request->getContent(),User::class, 'json');
+        $user = $this->serializer->deserialize($request->getContent(),User::class, 'json');
         $password = $this->encoder->encodePassword($user, $user->getPassword());
         $user->setPassword($password);
 
@@ -121,7 +114,7 @@ class RegistrationController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($user, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
+        $data = $this->serializer->serialize($user, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
 
         //Create the response
         $response=array('user'=>json_decode($data));
@@ -163,17 +156,8 @@ class RegistrationController extends AbstractController
      */
     public function recovery(Request $request): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Deserialize to obtain object data
-        $user = $serializer->deserialize($request->getContent(),User::class, 'json');
+        $user = $this->serializer->deserialize($request->getContent(),User::class, 'json');
         $password = $this->encoder->encodePassword($user, $user->getPassword());
         $user->setPassword($password);
         $username = $user->getUsername();
@@ -209,7 +193,7 @@ class RegistrationController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($user, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
+        $data = $this->serializer->serialize($user, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
 
         //Create the response
         $response=array('user'=>json_decode($data));

@@ -4,26 +4,29 @@ namespace App\Controller;
 
 use App\Entity\Suggestion;
 use App\Entity\Category;
-use Doctrine\Common\Annotations\AnnotationReader;
+use App\Service\SerializerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
-use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
 
 class SuggestionController extends AbstractController
 {
+    /**
+     * @var Serializer
+     */
+    private Serializer $serializer;
+
+    public function __construct(SerializerService $serializerService)
+    {
+        $this->serializer = $serializerService->getSerializer();
+    }
+
     #[Route('/api/suggestion', name: 'suggestion_post', methods: ['POST'])]
     /**
      * @Route("/api/suggestion", name="suggestion_post", methods={"POST"})
@@ -60,17 +63,8 @@ class SuggestionController extends AbstractController
      */
     public function postSuggestion(Request $request): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Deserialize to obtain object data
-        $suggestion= $serializer->deserialize($request->getContent(), Suggestion::class, 'json',
+        $suggestion= $this->serializer->deserialize($request->getContent(), Suggestion::class, 'json',
             [AbstractNormalizer::IGNORED_ATTRIBUTES => ['username']]);
 
         //Get the doctrine
@@ -101,7 +95,7 @@ class SuggestionController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($suggestion, 'json', [
+        $data = $this->serializer->serialize($suggestion, 'json', [
             AbstractNormalizer::GROUPS => ['suggestions']
         ]);
 
@@ -130,20 +124,11 @@ class SuggestionController extends AbstractController
      */
     public function getSuggestions(): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get suggestions
         $suggestions = $this->getDoctrine()->getRepository(Suggestion::class)->findAll();
 
         //Serialize the response data
-        $data = $serializer->serialize($suggestions, 'json', [
+        $data = $this->serializer->serialize($suggestions, 'json', [
             AbstractNormalizer::GROUPS => ['suggestions']
         ]);
 
@@ -174,20 +159,11 @@ class SuggestionController extends AbstractController
      */
     public function getSuggestion($id): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get the suggestion
         $suggestion = $this->getDoctrine()->getRepository(Suggestion::class)->find($id);
 
         //Serialize the response data
-        $data = $serializer->serialize($suggestion, 'json',
+        $data = $this->serializer->serialize($suggestion, 'json',
             [AbstractNormalizer::GROUPS => ['suggestions']]);
 
         //Create the response

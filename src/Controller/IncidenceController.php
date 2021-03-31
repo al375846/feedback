@@ -4,26 +4,30 @@ namespace App\Controller;
 
 use App\Entity\Incidence;
 use App\Entity\Publication;
-use Doctrine\Common\Annotations\AnnotationReader;
+use App\Service\SerializerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
-use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
 
 class IncidenceController extends AbstractController
 {
+
+    /**
+     * @var Serializer
+     */
+    private Serializer $serializer;
+
+    public function __construct(SerializerService $serializerService)
+    {
+        $this->serializer = $serializerService->getSerializer();
+    }
+
     #[Route('/api/incidence/publication/{id}', name: 'incidence_post', methods: ['POST'])]
     /**
      * @Route("/api/incidence/publication/{id}", name="incidence_post", methods={"POST"})
@@ -51,17 +55,8 @@ class IncidenceController extends AbstractController
      */
     public function postIncidence($id, Request $request): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Deserialize to obtain object data
-        $incidence = $serializer->deserialize($request->getContent(), Incidence::class, 'json');
+        $incidence = $this->serializer->deserialize($request->getContent(), Incidence::class, 'json');
 
         //Get the doctrine
         $doctrine = $this->getDoctrine();
@@ -80,7 +75,7 @@ class IncidenceController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($incidence, 'json', [
+        $data = $this->serializer->serialize($incidence, 'json', [
             AbstractNormalizer::GROUPS => ['incidences'],
             AbstractNormalizer::IGNORED_ATTRIBUTES => ['publication']
         ]);
@@ -106,20 +101,11 @@ class IncidenceController extends AbstractController
      */
     public function getIncidences(): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get categories
         $incidences = $this->getDoctrine()->getRepository(Incidence::class)->findAll();
 
         //Serialize the response data
-        $data = $serializer->serialize($incidences, 'json', [
+        $data = $this->serializer->serialize($incidences, 'json', [
             AbstractNormalizer::GROUPS => ['incidences'],
             AbstractNormalizer::IGNORED_ATTRIBUTES => ['publication']
         ]);
@@ -161,20 +147,11 @@ class IncidenceController extends AbstractController
      */
     public function getIncidence($id): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get categories
         $incidences = $this->getDoctrine()->getRepository(Incidence::class)->find($id);
 
         //Serialize the response data
-        $data = $serializer->serialize($incidences, 'json', [
+        $data = $this->serializer->serialize($incidences, 'json', [
             AbstractNormalizer::GROUPS => ['incidences']
         ]);
 

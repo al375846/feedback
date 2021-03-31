@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\Entity\Apprentice;
 use App\Entity\Category;
 use App\Entity\Feedback;
-use App\Service\UploaderService;
+use App\Service\SerializerService;
 use App\Entity\Publication;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,19 +15,21 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Serializer;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Doctrine\Common\Annotations\AnnotationReader;
-use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
-use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
 
 class PublicationController extends AbstractController
 {
+    /**
+     * @var Serializer
+     */
+    private Serializer $serializer;
+
+    public function __construct(SerializerService $serializerService)
+    {
+        $this->serializer = $serializerService->getSerializer();
+    }
+
     #[Route('/api/publication', name: 'publication_post', methods: ['POST'])]
     /**
      * @Route("/api/publication", name="publication_post", methods={"POST"})
@@ -67,17 +69,8 @@ class PublicationController extends AbstractController
      */
     public function postPublication(Request $request): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Deserialize to obtain object data
-        $publication = $serializer->deserialize($request->getContent(), Publication::class, 'json');
+        $publication = $this->serializer->deserialize($request->getContent(), Publication::class, 'json');
 
         //Get doctrine
         $doctrine = $this->getDoctrine();
@@ -102,7 +95,7 @@ class PublicationController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($publication, 'json', [
+        $data = $this->serializer->serialize($publication, 'json', [
             AbstractNormalizer::GROUPS => ['publications']
         ]);
 
@@ -115,7 +108,6 @@ class PublicationController extends AbstractController
     #[Route('/api/publication', name: 'publication_get', methods: ['GET'])]
     /**
      * @Route("/api/publication", name="publication_get", methods={"GET"})
-     * @OA\Parameter(name="itemSize", in="query", required=false)
      * @OA\Parameter(name="cursor", in="query", required=false)
      * @OA\Parameter(name="filter", in="query", required=false)
      * @OA\Response(response=200, description="Gets all publications",
@@ -139,22 +131,14 @@ class PublicationController extends AbstractController
      * @param Request $request
      * @return Response
      */
-    public function getPublications(Request $request): Response {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
-        //Get page and items count
-        $itemSize = $request->query->get('itemSize', 10);
+    public function getPublications(Request $request): Response
+    {
+        //Get cursor and filter
         $cursor = $request->query->get('cursor', -1);
         $filter = strtolower($request->query->get('filter', ""));
 
         //Get publications
+        $itemSize = 25;
         if ($cursor == -1) {
             $dql = "SELECT p
                     FROM App\Entity\Publication p
@@ -196,7 +180,7 @@ class PublicationController extends AbstractController
         }
 
         //Serialize the response data
-        $data = $serializer->serialize($publications, 'json', [
+        $data = $this->serializer->serialize($publications, 'json', [
             AbstractNormalizer::GROUPS => ['publications']
         ]);
 
@@ -233,16 +217,8 @@ class PublicationController extends AbstractController
      * @param $id
      * @return Response
      */
-    public function getPublication($id): Response {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
+    public function getPublication($id): Response
+    {
         //Get publication
         $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
         if ($publication == null) {
@@ -251,7 +227,7 @@ class PublicationController extends AbstractController
         }
 
         //Serialize the response data
-        $data = $serializer->serialize($publication, 'json', [
+        $data = $this->serializer->serialize($publication, 'json', [
             AbstractNormalizer::GROUPS => ['publications']
         ]);
 
@@ -289,15 +265,6 @@ class PublicationController extends AbstractController
      */
     public function getPublicationFeedback($id): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get doctrine
         $doctrine = $this->getDoctrine();
 
@@ -310,7 +277,7 @@ class PublicationController extends AbstractController
         $feedbacks = $doctrine->getRepository(Feedback::class)->findBy(['publication' => $publication]);
 
         //Serialize the response data
-        $data = $serializer->serialize($feedbacks, 'json', [
+        $data = $this->serializer->serialize($feedbacks, 'json', [
             AbstractNormalizer::GROUPS => ['feedbacks'],
             AbstractNormalizer::IGNORED_ATTRIBUTES => ['publication']
         ]);
@@ -361,15 +328,6 @@ class PublicationController extends AbstractController
      */
     public function putPublication($id, Request $request): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
@@ -382,7 +340,7 @@ class PublicationController extends AbstractController
         }
 
         //Deserialize to obtain object data
-        $serializer->deserialize($request->getContent(), Publication::class, 'json', [
+        $this->serializer->deserialize($request->getContent(), Publication::class, 'json', [
             AbstractNormalizer::OBJECT_TO_POPULATE => $old
         ]);
 
@@ -405,7 +363,7 @@ class PublicationController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($old, 'json', [
+        $data = $this->serializer->serialize($old, 'json', [
             AbstractNormalizer::GROUPS => ['publications']
         ]);
 

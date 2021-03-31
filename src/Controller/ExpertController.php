@@ -6,7 +6,6 @@ use App\Entity\Category;
 use App\Entity\Expert;
 use App\Entity\ExpertCategories;
 use App\Entity\Feedback;
-use App\Entity\User;
 use App\Service\SerializerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,16 +14,9 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Serializer;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Doctrine\Common\Annotations\AnnotationReader;
-use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
-use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
+
 class ExpertController extends AbstractController
 {
     /**
@@ -63,15 +55,6 @@ class ExpertController extends AbstractController
      */
     public function postFavCategory($id, Request $request): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
@@ -104,7 +87,7 @@ class ExpertController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($favCat, 'json', [
+        $data = $this->serializer->serialize($favCat, 'json', [
             AbstractNormalizer::GROUPS => ['fav_categories']
         ]);
 
@@ -134,19 +117,9 @@ class ExpertController extends AbstractController
      */
     public function getFavCategory(): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get doctrine
         $doctrine = $this->getDoctrine();
 
-        //Get expert
         //Get expert
         $user = $this->getUser();
         $expert = $doctrine->getRepository(Expert::class)->findOneBy(['userdata'=>$user]);
@@ -159,7 +132,7 @@ class ExpertController extends AbstractController
         }
 
         //Serialize the response data
-        $data = $serializer->serialize($favourite, 'json', [
+        $data = $this->serializer->serialize($favourite, 'json', [
             AbstractNormalizer::GROUPS => ['fav_categories']
         ]);
 
@@ -190,15 +163,6 @@ class ExpertController extends AbstractController
      */
     public function getOneFavCategory($id): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get doctrine
         $doctrine = $this->getDoctrine();
 
@@ -223,7 +187,7 @@ class ExpertController extends AbstractController
         }
 
         //Serialize the response data
-        $data = $serializer->serialize($favCat->getCategory(), 'json', [
+        $data = $this->serializer->serialize($favCat->getCategory(), 'json', [
             AbstractNormalizer::GROUPS => ['fav_categories']
         ]);
 
@@ -251,7 +215,6 @@ class ExpertController extends AbstractController
      */
     public function deleteFavCategory($id): Response
     {
-
         //Get doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
@@ -317,15 +280,6 @@ class ExpertController extends AbstractController
      */
     public function getPublicationsUser(): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get the doctrine
         $doctrine = $this->getDoctrine();
 
@@ -343,7 +297,7 @@ class ExpertController extends AbstractController
         $feedbacks = $doctrine->getRepository(Feedback::class)->findBy(['expert'=>$expert]);
 
         //Serialize the response data
-        $data = $serializer->serialize($feedbacks, 'json', [
+        $data = $this->serializer->serialize($feedbacks, 'json', [
             AbstractNormalizer::GROUPS => ['feedbacks'],
             AbstractNormalizer::IGNORED_ATTRIBUTES => ['expert']
         ]);

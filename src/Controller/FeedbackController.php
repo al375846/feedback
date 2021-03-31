@@ -5,29 +5,17 @@ namespace App\Controller;
 use App\Entity\Expert;
 use App\Entity\Feedback;
 use App\Service\SerializerService;
-use App\Service\UploaderService;
-use App\Entity\User;
-use Aws\S3\S3Client;
+use App\Entity\Publication;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Serializer;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Doctrine\Common\Annotations\AnnotationReader;
-use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
-use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
-use App\Entity\Publication;
 
 class FeedbackController extends AbstractController
 {
@@ -75,15 +63,6 @@ class FeedbackController extends AbstractController
      */
     public function postFeedback($id, Request $request): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        /*$encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);*/
-
         //Deserialize to obtain object data
         $feedback = $this->serializer->deserialize($request->getContent(), Feedback::class, 'json');
 
@@ -122,7 +101,6 @@ class FeedbackController extends AbstractController
     #[Route('/api/feedback', name: 'feedback_get', methods: ['GET'])]
     /**
      * @Route("/api/feedback", name="feedback_get", methods={"GET"})
-     * @OA\Parameter(name="itemSize", in="query", required=false)
      * @OA\Parameter(name="cursor", in="query", required=false)
      * @OA\Response(response=200, description="Gets all feedbacks",
      *     @OA\JsonContent(type="object",
@@ -142,21 +120,13 @@ class FeedbackController extends AbstractController
      * @param Request $request
      * @return Response
      */
-    public function getFeedbacks(Request $request): Response {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
-        //Get page and items count
-        $itemSize = $request->query->get('itemSize', 10);
+    public function getFeedbacks(Request $request): Response
+    {
+        //Get cursor
         $cursor = $request->query->get('cursor', -1);
 
         //Get feedbacks
+        $itemSize = 25;
         if ($cursor == -1) {
             $dql = "SELECT f FROM App\Entity\Feedback f ORDER BY f.id DESC";
             $query = $this->getDoctrine()->getManager()->createQuery($dql)
@@ -179,7 +149,7 @@ class FeedbackController extends AbstractController
         }
 
         //Serialize the response data
-        $data = $serializer->serialize($feedbacks, 'json', [
+        $data = $this->serializer->serialize($feedbacks, 'json', [
             AbstractNormalizer::GROUPS => ['feedbacks'],
             AbstractNormalizer::IGNORED_ATTRIBUTES => ['publication']
         ]);
@@ -218,15 +188,6 @@ class FeedbackController extends AbstractController
      * @return Response
      */
     public function getFeedback($id): Response {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get feedback
         $feedback = $this->getDoctrine()->getRepository(Feedback::class)->find($id);
         if ($feedback == null) {
@@ -235,7 +196,7 @@ class FeedbackController extends AbstractController
         }
 
         //Serialize the response data
-        $data = $serializer->serialize($feedback, 'json', [
+        $data = $this->serializer->serialize($feedback, 'json', [
             AbstractNormalizer::GROUPS => ['feedbacks']
         ]);
 
@@ -279,15 +240,6 @@ class FeedbackController extends AbstractController
      */
     public function putFeedback($id, Request $request): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
@@ -300,7 +252,7 @@ class FeedbackController extends AbstractController
         }
 
         //Deserialize to obtain object data
-        $serializer->deserialize($request->getContent(), Feedback::class, 'json', [
+        $this->serializer->deserialize($request->getContent(), Feedback::class, 'json', [
             AbstractNormalizer::OBJECT_TO_POPULATE => $old
         ]);
 
@@ -314,7 +266,7 @@ class FeedbackController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($old, 'json', [
+        $data = $this->serializer->serialize($old, 'json', [
             AbstractNormalizer::GROUPS => ['feedbacks']
         ]);
 

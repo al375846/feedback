@@ -4,25 +4,28 @@ namespace App\Controller;
 
 use App\Entity\Apprentice;
 use App\Entity\Publication;
+use App\Service\SerializerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Serializer;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Doctrine\Common\Annotations\AnnotationReader;
-use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
-use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
 
 class ApprenticeController extends AbstractController
 {
+    /**
+     * @var Serializer
+     */
+    private Serializer $serializer;
+
+    public function __construct(SerializerService $serializerService)
+    {
+        $this->serializer = $serializerService->getSerializer();
+    }
+
     #[Route('/api/apprentice/publication', name: 'apprentice_get_publication', methods: ['GET'])]
     /**
      * @Route("/api/apprentice/publication", name="apprentice_get_publication", methods={"GET"})
@@ -54,15 +57,6 @@ class ApprenticeController extends AbstractController
      */
     public function getPublicationsUser(): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get the doctrine
         $doctrine = $this->getDoctrine();
 
@@ -80,7 +74,7 @@ class ApprenticeController extends AbstractController
         $publications = $doctrine->getRepository(Publication::class)->findBy(['apprentice'=>$apprentice]);
 
         //Serialize the response data
-        $data = $serializer->serialize($publications, 'json', [
+        $data = $this->serializer->serialize($publications, 'json', [
             AbstractNormalizer::GROUPS => ['publications'],
             AbstractNormalizer::IGNORED_ATTRIBUTES => ['apprentice']
         ]);

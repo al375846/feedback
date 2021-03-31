@@ -12,16 +12,8 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Serializer;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Doctrine\Common\Annotations\AnnotationReader;
-use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
-use Symfony\Component\Serializer\Mapping\Loader\AnnotationLoader;
 
 
 class CategoryController extends AbstractController
@@ -79,15 +71,6 @@ class CategoryController extends AbstractController
         //Only admins can post categories
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        //Initialize encoders and normalizer to serialize and deserialize
-        /*$encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);*/
-
         //Deserialize to obtain object data
         $category = $this->serializer->deserialize($request->getContent(), Category::class, 'json');
 
@@ -144,20 +127,11 @@ class CategoryController extends AbstractController
      */
     public function getCategories(CategoryTree $categoryTree): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get the categories
         $categories = $categoryTree->buildTree();
 
         //Serialize the response data
-        $data = $serializer->serialize($categories, 'json');
+        $data = $this->serializer->serialize($categories, 'json');
 
         //Create the response
         $response=array('categories'=>json_decode($data));
@@ -184,20 +158,11 @@ class CategoryController extends AbstractController
      */
     public function getCategoriesRaw(): Response
     {
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get categories
         $categories = $this->getDoctrine()->getRepository(Category::class)->findAll();
 
         //Serialize the response data
-        $data = $serializer->serialize($categories, 'json', [
+        $data = $this->serializer->serialize($categories, 'json', [
             AbstractNormalizer::GROUPS => ['categories']
         ]);
 
@@ -290,15 +255,6 @@ class CategoryController extends AbstractController
         //Only admins can edit categories
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        //Initialize encoders and normalizer to serialize and deserialize
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
-        $normalizers = [
-            new DateTimeNormalizer(),
-            new ObjectNormalizer($classMetadataFactory, null, null, new ReflectionExtractor())
-        ];
-        $serializer = new Serializer($normalizers, $encoders);
-
         //Get the doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
@@ -311,7 +267,7 @@ class CategoryController extends AbstractController
         }
 
         //Deserialize to obtain object data
-        $category = $serializer->deserialize($request->getContent(), Category::class, 'json', [
+        $category = $this->serializer->deserialize($request->getContent(), Category::class, 'json', [
             AbstractNormalizer::OBJECT_TO_POPULATE => $category
         ]);
 
@@ -332,7 +288,7 @@ class CategoryController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $serializer->serialize($category, 'json', [
+        $data = $this->serializer->serialize($category, 'json', [
             AbstractNormalizer::GROUPS => ['categories']
         ]);
 
