@@ -154,21 +154,35 @@ class PublicationController extends AbstractController
         $cursor = $request->query->get('cursor', -1);
         $filter = strtolower($request->query->get('filter', ""));
 
-        //Get feedbacks
+        //Get publications
         if ($cursor == -1) {
             $dql = "SELECT p
                     FROM App\Entity\Publication p
+                    JOIN p.category c
+                    JOIN p.apprentice a
+                    WHERE LOWER(c.name) LIKE :filter
+                    OR LOWER(p.title) LIKE :filter
+                    OR LOWER(a.username) LIKE :filter
+                    OR LOWER(p.tags) LIKE :filter
                     ORDER BY p.id DESC";
             $query = $this->getDoctrine()->getManager()->createQuery($dql)
+                ->setParameter('filter', '%'.$filter.'%')
                 ->setFirstResult(0)
                 ->setMaxResults($itemSize);
         }
         else {
             $dql = "SELECT p 
                     FROM App\Entity\Publication p 
-                    WHERE f.id < :cursor 
+                    JOIN p.category c
+                    JOIN p.apprentice a
+                    WHERE p.id < :cursor AND
+                    (LOWER(c.name) LIKE :filter
+                    OR LOWER(p.title) LIKE :filter
+                    OR LOWER(a.username) LIKE :filter
+                    OR LOWER(p.tags) LIKE :filter)
                     ORDER BY p.id DESC";
             $query = $this->getDoctrine()->getManager()->createQuery($dql)
+                ->setParameter('filter', '%'.$filter.'%')
                 ->setParameter('cursor', $cursor)
                 ->setFirstResult(0)
                 ->setMaxResults($itemSize);
@@ -176,30 +190,9 @@ class PublicationController extends AbstractController
 
         $paginator = new Paginator($query, $fetchJoinCollection = true);
 
-        //Apply filters
         $publications = [];
         foreach ($paginator as $publication) {
-            $add = true;
-            if ($filter != "") {
-                $add = false;
-                $category = strtolower($publication->getCategory()->getName());
-                if (strpos($category, $filter) != false)
-                    $add = true;
-                $title = strtolower($publication->getTitle());
-                if (strpos($title, $filter) != false)
-                    $add = true;
-                $user = strtolower($publication->getApprentikce()->getUsername());
-                if (strpos($user, $filter) != false)
-                    $add = true;
-                foreach ($publication->getTags() as $tag) {
-                    if (strpos($tag, $filter) != false) {
-                        $add = true;
-                        break;
-                    }
-                }
-            }
-            if ($add)
-                $publications[] = $publication;
+            $publications[] = $publication;
         }
 
         //Serialize the response data
