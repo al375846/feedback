@@ -8,6 +8,7 @@ use App\Service\SerializerService;
 use App\Service\UploaderService;
 use App\Entity\User;
 use Aws\S3\S3Client;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -121,6 +122,8 @@ class FeedbackController extends AbstractController
     #[Route('/api/feedback', name: 'feedback_get', methods: ['GET'])]
     /**
      * @Route("/api/feedback", name="feedback_get", methods={"GET"})
+     * @OA\Parameter(name="itemSize", in="query", required=false)
+     * @OA\Parameter(name="cursor", in="query", required=false)
      * @OA\Response(response=200, description="Gets all feedbacks",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="feedbacks", type="array", @OA\Items(
@@ -136,8 +139,10 @@ class FeedbackController extends AbstractController
      * ))))
      * @OA\Tag(name="Feedbacks")
      * @Security(name="Bearer")
+     * @param Request $request
+     * @return Response
      */
-    public function getFeedbacks(): Response {
+    public function getFeedbacks(Request $request): Response {
         //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
@@ -147,8 +152,31 @@ class FeedbackController extends AbstractController
         ];
         $serializer = new Serializer($normalizers, $encoders);
 
+        //Get page and items count
+        $itemSize = $request->query->get('itemSize', 10);
+        $cursor = $request->query->get('cursor', -1);
+
         //Get feedbacks
-        $feedbacks = $this->getDoctrine()->getRepository(Feedback::class)->findAll();
+        if ($cursor == -1) {
+            $dql = "SELECT f FROM App\Entity\Feedback f ORDER BY f.id DESC";
+            $query = $this->getDoctrine()->getManager()->createQuery($dql)
+            ->setFirstResult(0)
+            ->setMaxResults($itemSize);
+        }
+        else {
+            $dql = "SELECT f FROM App\Entity\Feedback f WHERE f.id < :cursor ORDER BY f.id DESC";
+            $query = $this->getDoctrine()->getManager()->createQuery($dql)
+            ->setParameter('cursor', $cursor)
+            ->setFirstResult(0)
+            ->setMaxResults($itemSize);
+        }
+
+        $paginator = new Paginator($query, $fetchJoinCollection = false);
+
+        $feedbacks = [];
+        foreach ($paginator as $feedback) {
+            $feedbacks[] = $feedback;
+        }
 
         //Serialize the response data
         $data = $serializer->serialize($feedbacks, 'json', [

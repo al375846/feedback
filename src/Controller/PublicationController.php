@@ -7,6 +7,7 @@ use App\Entity\Category;
 use App\Entity\Feedback;
 use App\Service\UploaderService;
 use App\Entity\Publication;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -114,6 +115,10 @@ class PublicationController extends AbstractController
     #[Route('/api/publication', name: 'publication_get', methods: ['GET'])]
     /**
      * @Route("/api/publication", name="publication_get", methods={"GET"})
+     * @OA\Parameter(name="itemSize", in="query", required=false)
+     * @OA\Parameter(name="cursor", in="query", required=false)
+     * @OA\Parameter(name="title", in="query", required=false)
+     * @OA\Parameter(name="category", in="query", required=false)
      * @OA\Response(response=200, description="Gets all publications",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="publications", type="array", @OA\Items(
@@ -132,8 +137,10 @@ class PublicationController extends AbstractController
      * ))))
      * @OA\Tag(name="Publications")
      * @Security(name="Bearer")
+     * @param Request $request
+     * @return Response
      */
-    public function getPublications(): Response {
+    public function getPublications(Request $request): Response {
         //Initialize encoders and normalizer to serialize and deserialize
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
@@ -143,8 +150,48 @@ class PublicationController extends AbstractController
         ];
         $serializer = new Serializer($normalizers, $encoders);
 
-        //Get publications
-        $publications = $this->getDoctrine()->getRepository(Publication::class)->findAll();
+        //Get page and items count
+        $itemSize = $request->query->get('itemSize', 10);
+        $cursor = $request->query->get('cursor', -1);
+        $category = strtolower($request->query->get('category', ""));
+        $title = strtolower($request->query->get('title', ""));
+
+        //Get feedbacks
+        if ($cursor == -1) {
+            $dql = "SELECT p
+                    FROM App\Entity\Publication p
+                    ORDER BY p.id DESC";
+            $query = $this->getDoctrine()->getManager()->createQuery($dql)
+                ->setFirstResult(0)
+                ->setMaxResults($itemSize);
+        }
+        else {
+            $dql = "SELECT p 
+                    FROM App\Entity\Publication p 
+                    WHERE f.id < :cursor 
+                    ORDER BY p.id DESC";
+            $query = $this->getDoctrine()->getManager()->createQuery($dql)
+                ->setParameter('cursor', $cursor)
+                ->setFirstResult(0)
+                ->setMaxResults($itemSize);
+        }
+
+        $paginator = new Paginator($query, $fetchJoinCollection = true);
+
+        //Apply filters
+        $publications = [];
+        foreach ($paginator as $publication) {
+            $add = false;
+            if ($category != "") {
+                $name = strtolower($publication->getCategory()->getName());
+                $containedName = strpos();
+            }
+            if ($title != "") {
+                $pub = $publication->getCategory()->getName();
+            }
+            if ($add)
+                $publications[] = $publication;
+        }
 
         //Serialize the response data
         $data = $serializer->serialize($publications, 'json', [
