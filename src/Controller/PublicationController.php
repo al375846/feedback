@@ -117,8 +117,7 @@ class PublicationController extends AbstractController
      * @Route("/api/publication", name="publication_get", methods={"GET"})
      * @OA\Parameter(name="itemSize", in="query", required=false)
      * @OA\Parameter(name="cursor", in="query", required=false)
-     * @OA\Parameter(name="title", in="query", required=false)
-     * @OA\Parameter(name="category", in="query", required=false)
+     * @OA\Parameter(name="filter", in="query", required=false)
      * @OA\Response(response=200, description="Gets all publications",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="publications", type="array", @OA\Items(
@@ -153,8 +152,7 @@ class PublicationController extends AbstractController
         //Get page and items count
         $itemSize = $request->query->get('itemSize', 10);
         $cursor = $request->query->get('cursor', -1);
-        $category = strtolower($request->query->get('category', ""));
-        $title = strtolower($request->query->get('title', ""));
+        $filter = strtolower($request->query->get('filter', ""));
 
         //Get feedbacks
         if ($cursor == -1) {
@@ -181,13 +179,24 @@ class PublicationController extends AbstractController
         //Apply filters
         $publications = [];
         foreach ($paginator as $publication) {
-            $add = false;
-            if ($category != "") {
-                $name = strtolower($publication->getCategory()->getName());
-                $containedName = strpos();
-            }
-            if ($title != "") {
-                $pub = $publication->getCategory()->getName();
+            $add = true;
+            if ($filter != "") {
+                $add = false;
+                $category = strtolower($publication->getCategory()->getName());
+                if (strpos($category, $filter) != false)
+                    $add = true;
+                $title = strtolower($publication->getTitle());
+                if (strpos($title, $filter) != false)
+                    $add = true;
+                $user = strtolower($publication->getApprentikce()->getUsername());
+                if (strpos($user, $filter) != false)
+                    $add = true;
+                foreach ($publication->getTags() as $tag) {
+                    if (strpos($tag, $filter) != false) {
+                        $add = true;
+                        break;
+                    }
+                }
             }
             if ($add)
                 $publications[] = $publication;
