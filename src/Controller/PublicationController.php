@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Apprentice;
 use App\Entity\Category;
+use App\Entity\Expert;
+use App\Entity\ExpertCategories;
 use App\Entity\Feedback;
 use App\Service\SerializerService;
 use App\Entity\Publication;
@@ -136,43 +138,147 @@ class PublicationController extends AbstractController
         //Get cursor and filter
         $cursor = $request->query->get('cursor', -1);
         $filter = strtolower($request->query->get('filter', ""));
+        $itemSize = 25;
 
         //Get publications
-        $itemSize = 25;
-        if ($cursor == -1) {
-            $dql = "SELECT p
-                    FROM App\Entity\Publication p
-                    JOIN p.category c
-                    JOIN p.apprentice a
-                    WHERE LOWER(c.name) LIKE :filter
-                    OR LOWER(p.title) LIKE :filter
-                    OR LOWER(a.username) LIKE :filter
-                    OR LOWER(p.tags) LIKE :filter
-                    ORDER BY p.id DESC";
-            $query = $this->getDoctrine()->getManager()->createQuery($dql)
-                ->setParameter('filter', '%'.$filter.'%')
-                ->setFirstResult(0)
-                ->setMaxResults($itemSize);
-        }
-        else {
-            $dql = "SELECT p 
-                    FROM App\Entity\Publication p 
-                    JOIN p.category c
-                    JOIN p.apprentice a
-                    WHERE p.id < :cursor AND
-                    (LOWER(c.name) LIKE :filter
-                    OR LOWER(p.title) LIKE :filter
-                    OR LOWER(a.username) LIKE :filter
-                    OR LOWER(p.tags) LIKE :filter)
-                    ORDER BY p.id DESC";
-            $query = $this->getDoctrine()->getManager()->createQuery($dql)
-                ->setParameter('filter', '%'.$filter.'%')
-                ->setParameter('cursor', $cursor)
-                ->setFirstResult(0)
-                ->setMaxResults($itemSize);
+        $paginator = $this->getPublicationsPaginator($cursor, $itemSize, $filter);
+
+        $publications = [];
+        foreach ($paginator as $publication) {
+            $publications[] = $publication;
         }
 
-        $paginator = new Paginator($query, $fetchJoinCollection = true);
+        //Serialize the response data
+        $data = $this->serializer->serialize($publications, 'json', [
+            AbstractNormalizer::GROUPS => ['publications']
+        ]);
+
+        //Create the response
+        $response=array('publications'=>json_decode($data));
+
+        return new JsonResponse($response, 200);
+    }
+
+    #[Route('/api/publication/category/{id}', name: 'publication_get_category', methods: ['GET'])]
+    /**
+     * @Route("/api/publication/category/{id}", name="publication_get_category", methods={"GET"})
+     * @OA\Parameter(name="cursor", in="query", required=false)
+     * @OA\Parameter(name="filter", in="query", required=false)
+     * @OA\Response(response=200, description="Gets all publications",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="publications", type="array", @OA\Items(
+     *     @OA\Property(property="id", type="integer"),
+     *     @OA\Property(property="title", type="string"),
+     *     @OA\Property(property="category", type="object",
+     *          @OA\Property(property="name", type="string")),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="tags", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="apprentice", type="object",
+     *          @OA\Property(property="username", type="string")),
+     *     @OA\Property(property="date", type="string", format="date-time")
+     * ))))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Tag(name="Publications")
+     * @Security(name="Bearer")
+     * @param $id
+     * @param Request $request
+     * @return Response
+     */
+    public function getPublicationsCategory($id, Request $request): Response
+    {
+        //Get cursor and filter
+        $cursor = $request->query->get('cursor', -1);
+        $filter = strtolower($request->query->get('filter', ""));
+        $itemSize = 25;
+
+        //Get category
+        $doctrine = $this->getDoctrine();
+        $category = $doctrine->getRepository(Category::class)->find($id);
+        if ($category == null) {
+            $response=array('error'=>'Category not found');
+            return new JsonResponse($response,404);
+        }
+        $name = strtolower($category->getName());
+        $subcategories = $doctrine->getRepository(Category::class)->findBy(['parent'=>$category]);
+        $names = [];
+        foreach ($subcategories as $sub)
+            $names[] = strtolower($sub->getName());
+
+        //Get publications
+        $paginator = $this->getPublicationsByCategoryPaginator($cursor, $itemSize, $filter, $name, $names);
+
+        $publications = [];
+        foreach ($paginator as $publication) {
+            $publications[] = $publication;
+        }
+
+        //Serialize the response data
+        $data = $this->serializer->serialize($publications, 'json', [
+            AbstractNormalizer::GROUPS => ['publications']
+        ]);
+
+        //Create the response
+        $response=array('publications'=>json_decode($data));
+
+        return new JsonResponse($response, 200);
+    }
+
+    #[Route('/api/publication/expert', name: 'publication_get_expert', methods: ['GET'])]
+    /**
+     * @Route("/api/publication/expert", name="publication_get_expert", methods={"GET"})
+     * @OA\Parameter(name="cursor", in="query", required=false)
+     * @OA\Parameter(name="filter", in="query", required=false)
+     * @OA\Response(response=200, description="Gets all publications",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="publications", type="array", @OA\Items(
+     *     @OA\Property(property="id", type="integer"),
+     *     @OA\Property(property="title", type="string"),
+     *     @OA\Property(property="category", type="object",
+     *          @OA\Property(property="name", type="string")),
+     *     @OA\Property(property="description", type="string"),
+     *     @OA\Property(property="tags", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="apprentice", type="object",
+     *          @OA\Property(property="username", type="string")),
+     *     @OA\Property(property="date", type="string", format="date-time")
+     * ))))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Tag(name="Publications")
+     * @Security(name="Bearer")
+     * @param Request $request
+     * @return Response
+     */
+    public function getPublicationsExpert(Request $request): Response
+    {
+        //Get cursor and filter
+        $cursor = $request->query->get('cursor', -1);
+        $filter = strtolower($request->query->get('filter', ""));
+        $itemSize = 25;
+
+        //Get expert
+        $doctrine = $this->getDoctrine();
+        $user = $this->getUser();
+        $expert = $doctrine->getRepository(Expert::class)->findBy(['userdata'=>$user]);
+
+        //Get categories
+        $favs = $doctrine->getRepository(ExpertCategories::class)->findBy(['expert'=>$expert]);
+        $names = [];
+        foreach ($favs as $fav)
+            $names[] = strtolower($fav->getCategory()->getName());
+
+        //Get publications
+        $paginator = $this->getPublicationsByExpertPaginator($cursor, $itemSize, $filter, $names);
 
         $publications = [];
         foreach ($paginator as $publication) {
@@ -417,5 +523,125 @@ class PublicationController extends AbstractController
         $response=array('deleted'=>true);
 
         return new JsonResponse($response,200);
+    }
+
+    private function getPublicationsPaginator($cursor, $itemSize, $filter)
+    {
+        if ($cursor == -1) {
+            $dql = "SELECT p
+                    FROM App\Entity\Publication p
+                    JOIN p.category c
+                    JOIN p.apprentice a
+                    WHERE LOWER(c.name) LIKE :filter
+                    OR LOWER(p.title) LIKE :filter
+                    OR LOWER(a.username) LIKE :filter
+                    OR LOWER(p.tags) LIKE :filter
+                    ORDER BY p.id DESC";
+            $query = $this->getDoctrine()->getManager()->createQuery($dql)
+                ->setParameter('filter', '%'.$filter.'%')
+                ->setFirstResult(0)
+                ->setMaxResults($itemSize);
+        }
+        else {
+            $dql = "SELECT p 
+                    FROM App\Entity\Publication p 
+                    JOIN p.category c
+                    JOIN p.apprentice a
+                    WHERE p.id < :cursor AND
+                    (LOWER(c.name) LIKE :filter
+                    OR LOWER(p.title) LIKE :filter
+                    OR LOWER(a.username) LIKE :filter
+                    OR LOWER(p.tags) LIKE :filter)
+                    ORDER BY p.id DESC";
+            $query = $this->getDoctrine()->getManager()->createQuery($dql)
+                ->setParameter('filter', '%'.$filter.'%')
+                ->setParameter('cursor', $cursor)
+                ->setFirstResult(0)
+                ->setMaxResults($itemSize);
+        }
+
+        return new Paginator($query, $fetchJoinCollection = true);
+    }
+
+    private function getPublicationsByCategoryPaginator($cursor, $itemSize, $filter, $name, $names)
+    {
+        if ($cursor == -1) {
+            $dql = "SELECT p
+                    FROM App\Entity\Publication p
+                    JOIN p.category c
+                    JOIN p.apprentice a
+                    WHERE (LOWER(c.name) = :category OR LOWER(c.name) IN (:subcategory))
+                    AND (LOWER(p.title) LIKE :filter
+                    OR LOWER(a.username) LIKE :filter
+                    OR LOWER(p.tags) LIKE :filter)
+                    ORDER BY p.id DESC";
+            $query = $this->getDoctrine()->getManager()->createQuery($dql)
+                ->setParameter('filter', '%'.$filter.'%')
+                ->setParameter('category', $name)
+                ->setParameter('subcategory', $names)
+                ->setFirstResult(0)
+                ->setMaxResults($itemSize);
+        }
+        else {
+            $dql = "SELECT p 
+                    FROM App\Entity\Publication p 
+                    JOIN p.category c
+                    JOIN p.apprentice a
+                    WHERE p.id < :cursor AND
+                    (LOWER(c.name) = :category OR LOWER(c.name) IN (:subcategory))
+                    AND (LOWER(p.title) LIKE :filter
+                    OR LOWER(a.username) LIKE :filter
+                    OR LOWER(p.tags) LIKE :filter)
+                    ORDER BY p.id DESC";
+            $query = $this->getDoctrine()->getManager()->createQuery($dql)
+                ->setParameter('filter', '%'.$filter.'%')
+                ->setParameter('cursor', $cursor)
+                ->setParameter('category', $name)
+                ->setParameter('subcategory', $names)
+                ->setFirstResult(0)
+                ->setMaxResults($itemSize);
+        }
+
+        return new Paginator($query, $fetchJoinCollection = true);
+    }
+
+    private function getPublicationsByExpertPaginator($cursor, $itemSize, $filter, $names)
+    {
+        if ($cursor == -1) {
+            $dql = "SELECT p
+                    FROM App\Entity\Publication p
+                    JOIN p.category c
+                    JOIN p.apprentice a
+                    WHERE LOWER(c.name) IN (:subcategory)
+                    AND (LOWER(p.title) LIKE :filter
+                    OR LOWER(a.username) LIKE :filter
+                    OR LOWER(p.tags) LIKE :filter)
+                    ORDER BY p.id DESC";
+            $query = $this->getDoctrine()->getManager()->createQuery($dql)
+                ->setParameter('filter', '%'.$filter.'%')
+                ->setParameter('subcategory', $names)
+                ->setFirstResult(0)
+                ->setMaxResults($itemSize);
+        }
+        else {
+            $dql = "SELECT p 
+                    FROM App\Entity\Publication p 
+                    JOIN p.category c
+                    JOIN p.apprentice a
+                    WHERE p.id < :cursor AND
+                    LOWER(c.name) IN (:subcategory)
+                    AND (LOWER(p.title) LIKE :filter
+                    OR LOWER(a.username) LIKE :filter
+                    OR LOWER(p.tags) LIKE :filter)
+                    ORDER BY p.id DESC";
+            $query = $this->getDoctrine()->getManager()->createQuery($dql)
+                ->setParameter('filter', '%'.$filter.'%')
+                ->setParameter('cursor', $cursor)
+                ->setParameter('subcategory', $names)
+                ->setFirstResult(0)
+                ->setMaxResults($itemSize);
+        }
+
+        return new Paginator($query, $fetchJoinCollection = true);
     }
 }
