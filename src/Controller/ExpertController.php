@@ -6,6 +6,7 @@ use App\Entity\Category;
 use App\Entity\Expert;
 use App\Entity\ExpertCategories;
 use App\Entity\Feedback;
+use App\Entity\Valoration;
 use App\Service\SerializerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -304,6 +305,87 @@ class ExpertController extends AbstractController
 
         //Create the response
         $response=array('feedbacks'=>json_decode($data));
+
+        return new JsonResponse($response, 200);
+    }
+
+    #[Route('/api/expert/history', name: 'expert_get_history', methods: ['GET'])]
+    /**
+     * @Route("/api/expert/history", name="expert_get_history", methods={"GET"})
+     * @OA\Response(response=200, description="Gets history of an expert",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="history", type="array", @OA\Items(type="object",
+     *     @OA\Property(property="id", type="integer"),
+     *     @OA\Property(property="type", type="string"),
+     *     @OA\Property(property="content", type="string"),
+     *     @OA\Property(property="date", type="string", format="date-time")
+     * ))))
+     * @OA\Response(response=401, description="Unauthorized",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Response(response=409, description="Conflict",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Tag(name="Experts")
+     * @Security(name="Bearer")
+     * @return Response
+     */
+    public function getHistory(): Response
+    {
+        //Get the doctrine
+        $doctrine = $this->getDoctrine();
+
+        //Get the apprentice
+        $username = $this->getUser()->getUsername();
+        $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username'=>$username]);
+
+        //Check if the user is an apprentice
+        if ($expert == null) {
+            $response=array('error'=>'The user is not an expert');
+            return new JsonResponse($response, 409);
+        }
+
+        //Get feedbacks
+        $feedbacks = $doctrine->getRepository(Feedback::class)->findBy(['expert'=>$expert]);
+
+        //Get ratings
+        $ratings = [];
+        foreach ($feedbacks as $feedback) {
+            $ratings[] = $feedback->getValoration();
+        }
+
+        //Create history
+        $history = [];
+        foreach ($feedbacks as $feedback) {
+            $feed['id'] = $feedback->getId();
+            $feed['type'] = 'feedback';
+            $feed['content'] = 'Has realizado un feedback: en la publicación: ' . $feedback->getPublication()->getTitle();
+            $feed['date'] = $feedback->getDate();
+            $history[] = $feed;
+        }
+
+        foreach ($ratings as $rating) {
+            if ($rating != null) {
+                $feed['id'] = $rating->getId();
+                $feed['type'] = 'rating';
+                $feed['content'] = 'Has recibo una valoración de '.$rating->getGrade(). ' en el feedback de la publicación: '
+                    . $rating->getFeedback()->getPublication()->getTitle();
+                $feed['date'] = $rating->getDate();
+                $history[] = $feed;
+            }
+        }
+
+        usort($history, function($a, $b){
+            return $b['date'] > $a['date'];
+        });
+
+        //Serialize the response data
+        $data = $this->serializer->serialize($history, 'json');
+
+        //Create the response
+        $response=array('history'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }

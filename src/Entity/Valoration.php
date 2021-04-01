@@ -52,6 +52,13 @@ class Valoration
      */
     private $grade;
 
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     * @OA\Property(type="datetime")
+     * @Groups({"ratings", "feedbacks"})
+     */
+    private $date;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -101,6 +108,18 @@ class Valoration
     public function setGrade(int $grade): self
     {
         $this->grade = $grade;
+
+        return $this;
+    }
+
+    public function getDate(): ?\DateTimeInterface
+    {
+        return $this->date;
+    }
+
+    public function setDate(\DateTimeInterface $date): self
+    {
+        $this->date = $date;
 
         return $this;
     }

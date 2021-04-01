@@ -35,7 +35,8 @@ class ValorationController extends AbstractController
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="rating", type="object",
      *          @OA\Property(property="id", type="integer"),
-     *          @OA\Property(property="grade", type="integer"))
+     *          @OA\Property(property="grade", type="integer"),
+     *          @OA\Property(property="date", type="string", format="date-time"))
      * ))
      * @OA\Response(response=409, description="Conflict",
      *     @OA\JsonContent(type="object",
@@ -47,7 +48,8 @@ class ValorationController extends AbstractController
      * ))
      * @OA\RequestBody(description="Input data format",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="grade", type="integer")
+     *     @OA\Property(property="grade", type="integer"),
+     *     @OA\Property(property="date", type="string", format="date-time")
      * ))
      * @OA\Tag(name="Ratings")
      * @Security(name="Bearer")
