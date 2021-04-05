@@ -360,18 +360,18 @@ class ExpertController extends AbstractController
         $history = [];
         foreach ($feedbacks as $feedback) {
             $feed['id'] = $feedback->getId();
-            $feed['type'] = 'feedback';
-            $feed['content'] = 'Has realizado un feedback: en la publicación: ' . $feedback->getPublication()->getTitle();
+            $feed['type'] = 'Feedback';
+            $feed['content'] = 'Has realizado un feedback en ' . $feedback->getPublication()->getTitle();
             $feed['date'] = $feedback->getDate();
             $history[] = $feed;
         }
 
         foreach ($ratings as $rating) {
             if ($rating != null) {
-                $feed['id'] = $rating->getId();
-                $feed['type'] = 'rating';
-                $feed['content'] = 'Has recibo una valoración de '.$rating->getGrade(). ' en el feedback de la publicación: '
-                    . $rating->getFeedback()->getPublication()->getTitle();
+                $feed['id'] = $rating->getFeedback()->getId();
+                $feed['type'] = 'Valoracion';
+                $feed['content'] = $rating->getApprentice()->getUsername()
+                    . ' te ha valorado con un ' . $rating->getGrade();
                 $feed['date'] = $rating->getDate();
                 $history[] = $feed;
             }

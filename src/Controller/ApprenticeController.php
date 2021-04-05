@@ -138,16 +138,16 @@ class ApprenticeController extends AbstractController
         $history = [];
         foreach ($publications as $publication) {
             $pub['id'] = $publication->getId();
-            $pub['type'] = 'publication';
-            $pub['content'] = 'Has realizado una publicación: '. $publication->getTitle();
+            $pub['type'] = 'Publicacion';
+            $pub['content'] = 'Has realizado la publicación '. $publication->getTitle();
             $pub['date'] = $publication->getDate();
             $history[] = $pub;
         }
 
         foreach ($feedbacks as $feedback) {
             $feed['id'] = $feedback->getId();
-            $feed['type'] = 'feedback';
-            $feed['content'] = 'Has recibido un feedback en la publicación: ' . $feedback->getPublication()->getTitle();
+            $feed['type'] = 'Feedback';
+            $feed['content'] = 'Has recibido un feedback de ' . $feedback->getExpert()->getUsername();
             $feed['date'] = $feedback->getDate();
             $history[] = $feed;
         }
