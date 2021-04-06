@@ -139,7 +139,7 @@ class ApprenticeController extends AbstractController
         foreach ($publications as $publication) {
             $pub['id'] = $publication->getId();
             $pub['type'] = 'Publicacion';
-            $pub['content'] = 'Has realizado la publicación '. $publication->getTitle();
+            $pub['content'] = 'Has realizado la publicación *'. $publication->getTitle() . '*';
             $pub['date'] = $publication->getDate();
             $history[] = $pub;
         }
@@ -147,7 +147,7 @@ class ApprenticeController extends AbstractController
         foreach ($feedbacks as $feedback) {
             $feed['id'] = $feedback->getId();
             $feed['type'] = 'Feedback';
-            $feed['content'] = 'Has recibido un feedback de ' . $feedback->getExpert()->getUsername();
+            $feed['content'] = 'Has recibido un feedback de *' . $feedback->getExpert()->getUsername() . '*';
             $feed['date'] = $feedback->getDate();
             $history[] = $feed;
         }

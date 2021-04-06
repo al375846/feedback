@@ -361,7 +361,7 @@ class ExpertController extends AbstractController
         foreach ($feedbacks as $feedback) {
             $feed['id'] = $feedback->getId();
             $feed['type'] = 'Feedback';
-            $feed['content'] = 'Has realizado un feedback en ' . $feedback->getPublication()->getTitle();
+            $feed['content'] = 'Has realizado un feedback en *' . $feedback->getPublication()->getTitle() . '*';
             $feed['date'] = $feedback->getDate();
             $history[] = $feed;
         }
@@ -370,8 +370,8 @@ class ExpertController extends AbstractController
             if ($rating != null) {
                 $feed['id'] = $rating->getFeedback()->getId();
                 $feed['type'] = 'Valoracion';
-                $feed['content'] = $rating->getApprentice()->getUsername()
-                    . ' te ha valorado con un ' . $rating->getGrade();
+                $feed['content'] = '*' . $rating->getApprentice()->getUsername()
+                    . '* te ha valorado con un ' . $rating->getGrade();
                 $feed['date'] = $rating->getDate();
                 $history[] = $feed;
             }
