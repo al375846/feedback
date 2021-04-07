@@ -30,7 +30,7 @@ class RankingController extends AbstractController
      * @Route("/api/ranking/rated/experts", name="rated_experts", methods={"GET"})
      * @OA\Response(response=200, description="Gets experts order by valorations",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="ratedexperts", type="array", @OA\Items(
+     *     @OA\Property(property="ranking", type="array", @OA\Items(
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="rate", type="string"),
      *     @OA\Property(property="name", type="string")
@@ -54,7 +54,7 @@ class RankingController extends AbstractController
         $data = $this->serializer->serialize($rated, 'json');
 
         //Create the response
-        $response=array('ratedexperts'=>json_decode($data));
+        $response=array('ranking'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -64,7 +64,7 @@ class RankingController extends AbstractController
      * @Route("/api/ranking/active/experts", name="active_experts", methods={"GET"})
      * @OA\Response(response=200, description="Gets most active experts",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="activeexperts", type="array", @OA\Items(
+     *     @OA\Property(property="ranking", type="array", @OA\Items(
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="rate", type="string"),
      *     @OA\Property(property="name", type="string")
@@ -82,7 +82,7 @@ class RankingController extends AbstractController
         $data = $this->serializer->serialize($experts, 'json');
 
         //Create the response
-        $response=array('activeexperts'=>json_decode($data));
+        $response=array('ranking'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -92,7 +92,7 @@ class RankingController extends AbstractController
      * @Route("/api/ranking/active/categories", name="active_categories", methods={"GET"})
      * @OA\Response(response=200, description="Gets most active categories",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="activecategories", type="array", @OA\Items(
+     *     @OA\Property(property="ranking", type="array", @OA\Items(
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="rate", type="string"),
      *     @OA\Property(property="name", type="string"),
@@ -110,7 +110,7 @@ class RankingController extends AbstractController
         $data = $this->serializer->serialize($categories, 'json');
 
         //Create the response
-        $response=array('activecategories'=>json_decode($data));
+        $response=array('ranking'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
