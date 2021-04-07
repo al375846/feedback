@@ -28,7 +28,7 @@ class ExpertRepository extends ServiceEntityRepository
         $entityManager = $this->getEntityManager();
 
         $query = $entityManager->createQueryBuilder()
-            ->select("e.id, AVG(v.grade) as rate, e.username")
+            ->select("e.id, AVG(v.grade) as rate, e.username as name")
             ->from("App\Entity\Valoration", "v")
             ->leftJoin("v.expert", "e")
             ->groupBy("e.id")
@@ -47,7 +47,7 @@ class ExpertRepository extends ServiceEntityRepository
         $entityManager = $this->getEntityManager();
 
         $query = $entityManager->createQueryBuilder()
-            ->select("e.id, e.username")
+            ->select("e.id, COUNT(f.id) as rate, e.username as name")
             ->from("App\Entity\Feedback", "f")
             ->leftJoin("f.expert", "e")
             ->groupBy("e.id")

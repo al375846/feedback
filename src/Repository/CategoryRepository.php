@@ -27,7 +27,7 @@ class CategoryRepository extends ServiceEntityRepository
         $entityManager = $this->getEntityManager();
 
         $query = $entityManager->createQueryBuilder()
-            ->select("c.id, c.name, c.description")
+            ->select("c.id, COUNT(p.id) as rate, c.name")
             ->from("App\Entity\Publication", "p")
             ->leftJoin("p.category", "c")
             ->groupBy("c.id")

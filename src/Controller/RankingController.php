@@ -33,7 +33,7 @@ class RankingController extends AbstractController
      *     @OA\Property(property="ratedexperts", type="array", @OA\Items(
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="rate", type="string"),
-     *     @OA\Property(property="username", type="string")
+     *     @OA\Property(property="name", type="string")
      * ))))
      * @OA\Tag(name="Rankings")
      * @Security(name="Bearer")
@@ -66,7 +66,8 @@ class RankingController extends AbstractController
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="activeexperts", type="array", @OA\Items(
      *     @OA\Property(property="id", type="integer"),
-     *     @OA\Property(property="username", type="string")
+     *     @OA\Property(property="rate", type="string"),
+     *     @OA\Property(property="name", type="string")
      * ))))
      * @OA\Tag(name="Rankings")
      * @Security(name="Bearer")
@@ -93,8 +94,8 @@ class RankingController extends AbstractController
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="activecategories", type="array", @OA\Items(
      *     @OA\Property(property="id", type="integer"),
+     *     @OA\Property(property="rate", type="string"),
      *     @OA\Property(property="name", type="string"),
-     *     @OA\Property(property="description", type="string")
      * ))))
      * @OA\Tag(name="Rankings")
      * @Security(name="Bearer")
