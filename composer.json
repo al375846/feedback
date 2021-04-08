@@ -16,6 +16,7 @@
         "league/flysystem-aws-s3-v3": "^2.0",
         "lexik/jwt-authentication-bundle": "^2.11",
         "nelmio/api-doc-bundle": "^4.2",
+        "nelmio/cors-bundle": "^2.1",
         "oneup/flysystem-bundle": "^4.0",
         "phpdocumentor/reflection-docblock": "^5.2",
         "sensio/framework-extra-bundle": "^6.1",
