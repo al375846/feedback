@@ -146,9 +146,9 @@ class UserController extends AbstractController
         return new JsonResponse($response, 200);
     }
 
-    #[Route('/api/user', name: 'user_delete', methods: ['DELETE'])]
+    #[Route('/api/user/{pass}', name: 'user_delete', methods: ['DELETE'])]
     /**
-     * @Route("/api/user", name="user_delete", methods={"DELETE"})
+     * @Route("/api/user/{pass}", name="user_delete", methods={"DELETE"})
      * @OA\Response(response=200, description="Deletes a user",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="deleted", type="boolean")
@@ -157,19 +157,15 @@ class UserController extends AbstractController
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="error", type="string")
      * ))
-     * @OA\RequestBody(description="Input data format",
-     *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="password", type="string")
-     * ))
      * @OA\Tag(name="Users")
      * @Security(name="Bearer")
-     * @param Request $request
+     * @param $pass
      * @return Response
      */
-    public function deleteUser(Request $request): Response
+    public function deleteUser($pass): Response
     {
         //Deserialize to obtain object data
-        $pass = $this->serializer->deserialize($request->getContent(),User::class, 'json');
+        //$pass = $this->serializer->deserialize($request->getContent(),User::class, 'json');
         //$password = $this->encoder->encodePassword($pass, $pass->getPassword());
         //$pass->setPassword($password);
 
@@ -180,13 +176,14 @@ class UserController extends AbstractController
         //Get the user
         $user = $this->getUser();
 
-        $match = $this->encoder->isPasswordValid($user, $pass->getPassword());
+        $match = $this->encoder->isPasswordValid($user, $pass);
         if ($match === false) {
             $response=array('error'=>'Password is not correct');
             return new JsonResponse($response,404);
         }
 
         $username = $user->getUsername();
+        $user = $doctrine->getRepository(User::class)->findOneBy(['username' => $username]);
         $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username' => $username]);
         $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username' => $username]);
 
