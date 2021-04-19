@@ -157,17 +157,35 @@ class UserController extends AbstractController
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="error", type="string")
      * ))
+     * @OA\RequestBody(description="Input data format",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="password", type="string")
+     * ))
      * @OA\Tag(name="Users")
      * @Security(name="Bearer")
+     * @param Request $request
+     * @return Response
      */
-    public function deleteUser(): Response
+    public function deleteUser(Request $request): Response
     {
+        //Deserialize to obtain object data
+        $pass = $this->serializer->deserialize($request->getContent(),User::class, 'json');
+        //$password = $this->encoder->encodePassword($pass, $pass->getPassword());
+        //$pass->setPassword($password);
+
         //Get the doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
 
         //Get the user
         $user = $this->getUser();
+
+        $match = $this->encoder->isPasswordValid($user, $pass->getPassword());
+        if ($match === false) {
+            $response=array('error'=>'Password is not correct');
+            return new JsonResponse($response,404);
+        }
+
         $username = $user->getUsername();
         $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username' => $username]);
         $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username' => $username]);

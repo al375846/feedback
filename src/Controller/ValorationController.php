@@ -113,9 +113,9 @@ class ValorationController extends AbstractController
         return new JsonResponse($response,200);
     }
 
-    #[Route('/api/rating/{id}', name: 'rating_put', methods: ['PUT'])]
+    #[Route('/api/rating/feedback/{id}', name: 'rating_put', methods: ['PUT'])]
     /**
-     * @Route("/api/rating/{id}", name="rating_put", methods={"PUT"})
+     * @Route("/api/rating/feedback/{id}", name="rating_put", methods={"PUT"})
      * @OA\Response(response=200, description="Adds a valoration",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="rating", type="object",

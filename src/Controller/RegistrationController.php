@@ -135,7 +135,7 @@ class RegistrationController extends AbstractController
      *     @OA\Property(property="address", type="string"),
      *     @OA\Property(property="phone", type="string")
      * )))
-     * @OA\Response(response=409, description="Conflict",
+     * @OA\Response(response=404, description="Not found",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="error", type="string")
      * ))
@@ -150,7 +150,6 @@ class RegistrationController extends AbstractController
      * ))
      * @OA\Tag(name="Registration")
      * @Security()
-     * @param $type
      * @param Request $request
      * @return Response
      */
@@ -158,8 +157,7 @@ class RegistrationController extends AbstractController
     {
         //Deserialize to obtain object data
         $user = $this->serializer->deserialize($request->getContent(),User::class, 'json');
-        $password = $this->encoder->encodePassword($user, $user->getPassword());
-        $user->setPassword($password);
+        $password = $user->getPassword();
         $username = $user->getUsername();
 
         //Get the doctrine
@@ -176,6 +174,14 @@ class RegistrationController extends AbstractController
         $user->setAddress($old->getAddress());
         $user->setPhone($old->getPhone());
         $user->setRoles($old->getRoles());
+        $user->setPassword($old->getPassword());
+
+        //Check if is the right user
+        $match = $this->encoder->isPasswordValid($user, $password);
+        if ($match === false) {
+            $response=array('error'=>'Password is not correct');
+            return new JsonResponse($response,404);
+        }
 
         if ($old->getType() == 'apprentice') {
             $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username'=>$username]);
@@ -197,6 +203,52 @@ class RegistrationController extends AbstractController
 
         //Create the response
         $response=array('user'=>json_decode($data));
+
+        return new JsonResponse($response, 200);
+    }
+
+    #[Route('/api/check_username', name: 'check_username', methods: ['POST'])]
+    /**
+     * @Route("/api/check_username", name="check_username", methods={"POST"})
+     * @OA\Response(response=200, description="Adds an expert or apprentice user",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="exists", type="boolean"),
+     * )))
+     * @OA\Response(response=409, description="Conflict",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Response(response=400, description="Bad request",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\RequestBody(description="Input data format",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="username", type="string")
+     * ))
+     * @OA\Tag(name="Registration")
+     * @Security()
+     * @param Request $request
+     * @return Response
+     */
+    public function checkUsername(Request $request): Response
+    {
+        //Deserialize to obtain object data
+        $user = $this->serializer->deserialize($request->getContent(),User::class, 'json');
+
+        //Get the doctrine
+        $doctrine = $this->getDoctrine();
+        $em = $doctrine->getManager();
+
+        //Get user
+        $name = $doctrine->getRepository(User::class)->findOneBy(['username'=>$user->getUsername()]);
+        if ($name === null)
+            $ret = false;
+        else
+            $ret = true;
+
+        //Create the response
+        $response=array('exists'=>$ret);
 
         return new JsonResponse($response, 200);
     }
