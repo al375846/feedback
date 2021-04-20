@@ -85,7 +85,6 @@ class UserController extends AbstractController
      * @OA\RequestBody(description="Input data",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="username", type="string"),
-     *     @OA\Property(property="password", type="string"),
      *     @OA\Property(property="email", type="string"),
      *     @OA\Property(property="name", type="string"),
      *     @OA\Property(property="lastname", type="string"),
@@ -105,6 +104,7 @@ class UserController extends AbstractController
 
         //Get old user
         $user = $this->getUser();
+        $old = $this->getUser();
         $username = $user->getUsername();
         $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username' => $username]);
         $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username' => $username]);
@@ -114,24 +114,26 @@ class UserController extends AbstractController
             AbstractNormalizer::OBJECT_TO_POPULATE => $user
         ]);
 
-        //Check if new user is taken
-        $exists = $doctrine->getRepository(User::class)->findOneBy(['username' => $user->getUSername()]);
-        if ($exists != null) {
-            $response=array('error'=>'Username already exists');
-            return new JsonResponse($response,409);
-        }
+        //Check username is changed
+        if ($user->getUsername() !== $old->getUsername()) {
+            //Check if new user is taken
+            $exists = $doctrine->getRepository(User::class)->findOneBy(['username' => $user->getUSername()]);
+            if ($exists != null) {
+                $response=array('error'=>'Username already exists');
+                return new JsonResponse($response,409);
+            }
 
-        //Change user data
-        if ($apprentice != null) {
-            $apprentice->setUsername($user->getUsername());
-            $em->persist($apprentice);
+            //Change user data
+            if ($apprentice != null) {
+                $apprentice->setUsername($user->getUsername());
+                $em->persist($apprentice);
+            }
+            if ($expert != null) {
+                $expert->setUsername($user->getUsername());
+                $em->persist($expert);
+            }
         }
-        if ($expert != null) {
-            $expert->setUsername($user->getUsername());
-            $em->persist($expert);
-        }
-        $password = $this->encoder->encodePassword($user, $user->getPassword());
-        $user->setPassword($password);
+        $user->setPassword($old->getPassword());
 
         //Save new user
         $em->persist($user);
@@ -139,6 +141,59 @@ class UserController extends AbstractController
 
         //Serialize the response data
         $data = $this->serializer->serialize($user, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
+
+        //Create the response
+        $response=array('user'=>json_decode($data));
+
+        return new JsonResponse($response, 200);
+    }
+
+    #[Route('/api/user/change_password', name: 'change_password', methods: ['PUT'])]
+    /**
+     * @Route("/api/user/change_password", name="change_password", methods={"PUT"})
+     * @OA\Response(response=200, description="Edits a user",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="done", type="boolean")
+     * ))
+     * @OA\Response(response=409, description="Username already exists",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\RequestBody(description="Input data",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="password", type="string")
+     * ))
+     * @OA\Tag(name="Users")
+     * @Security(name="Bearer")
+     * @param Request $request
+     * @return Response
+     */
+    public function changePassword(Request $request): Response
+    {
+        //Get the doctrine
+        $doctrine = $this->getDoctrine();
+        $em = $doctrine->getManager();
+
+        //Get old user
+        $user = $this->getUser();
+        $username = $user->getUsername();
+        $old = $doctrine->getRepository(User::class)->findOneBy(['username' => $username]);
+
+        //Deserialize to obtain object data
+        $this->serializer->deserialize($request->getContent(), User::class, 'json', [
+            AbstractNormalizer::OBJECT_TO_POPULATE => $user
+        ]);
+
+        //Set new password
+        $password = $this->encoder->encodePassword($old, $user->getPassword());
+        $old->setPassword($password);
+
+        //Save new user
+        $em->persist($old);
+        $em->flush();
+
+        //Serialize the response data
+        $data = $this->serializer->serialize($old, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
 
         //Create the response
         $response=array('user'=>json_decode($data));

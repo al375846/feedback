@@ -357,7 +357,9 @@ class PublicationController extends AbstractController
      *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="valoration", type="object",
-     *          @OA\Property(property="grade", type="integer")),
+     *          @OA\Property(property="id", type="string"),
+     *          @OA\Property(property="grade", type="integer"),
+     *          @OA\Property(property="date", type="string", format="date-time")),
      *     @OA\Property(property="date", type="string", format="date-time")
      * ))))
      * @OA\Response(response=404, description="Not found",
