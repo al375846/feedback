@@ -79,7 +79,7 @@ class Publication
      * @ORM\ManyToOne(targetEntity=Apprentice::class, inversedBy="publications", cascade={"remove", "persist"})
      * @ORM\JoinColumn(nullable=true)
      * @OA\Property(ref=@Model(type=Apprentice::class))
-     * @Groups({"publications", "incidences"})
+     * @Groups({"publications", "incidences", "feedbacks"})
      */
     private $apprentice;
 
