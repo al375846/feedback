@@ -19,6 +19,75 @@ class PublicationRepository extends ServiceEntityRepository
         parent::__construct($registry, Publication::class);
     }
 
+    public function findAllGreaterId($cursor, $filter): array
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQuery(
+            'SELECT p 
+                    FROM App\Entity\Publication p 
+                    JOIN p.category c
+                    JOIN p.apprentice a
+                    WHERE p.id < :cursor AND
+                    (LOWER(c.name) LIKE :filter
+                    OR LOWER(p.title) LIKE :filter
+                    OR LOWER(a.username) LIKE :filter
+                    OR LOWER(p.tags) LIKE :filter)
+                    ORDER BY p.id DESC'
+        )
+            ->setParameter('filter', '%'.$filter.'%')
+            ->setParameter('cursor', $cursor);
+
+        return $query->getResult();
+    }
+
+    public function findAllGreaterIdByCategory($cursor, $filter, $name, $names): array
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQuery(
+            'SELECT p 
+                    FROM App\Entity\Publication p 
+                    JOIN p.category c
+                    JOIN p.apprentice a
+                    WHERE p.id < :cursor AND
+                    (LOWER(c.name) = :category OR LOWER(c.name) IN (:subcategory))
+                    AND (LOWER(p.title) LIKE :filter
+                    OR LOWER(a.username) LIKE :filter
+                    OR LOWER(p.tags) LIKE :filter)
+                    ORDER BY p.id DESC'
+        )
+        ->setParameter('filter', '%'.$filter.'%')
+        ->setParameter('cursor', $cursor)
+        ->setParameter('category', $name)
+        ->setParameter('subcategory', $names);
+
+        return $query->getResult();
+    }
+
+    public function findAllGreaterIdByExpert($cursor, $filter, $names): array
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQuery(
+            'SELECT p 
+            FROM App\Entity\Publication p 
+            JOIN p.category c
+            JOIN p.apprentice a
+            WHERE p.id < :cursor AND
+            LOWER(c.name) IN (:subcategory)
+            AND (LOWER(p.title) LIKE :filter
+            OR LOWER(a.username) LIKE :filter
+            OR LOWER(p.tags) LIKE :filter)
+            ORDER BY p.id DESC'
+        )
+        ->setParameter('filter', '%'.$filter.'%')
+        ->setParameter('cursor', $cursor)
+        ->setParameter('subcategory', $names);
+
+        return $query->getResult();
+    }
+
     // /**
     //  * @return Publication[] Returns an array of Publication objects
     //  */

@@ -138,7 +138,7 @@ class PublicationController extends AbstractController
         //Get cursor and filter
         $cursor = $request->query->get('cursor', -1);
         $filter = strtolower($request->query->get('filter', ""));
-        $itemSize = 25;
+        $itemSize = 24;
 
         //Get publications
         $paginator = $this->getPublicationsPaginator($cursor, $itemSize, $filter);
@@ -147,6 +147,9 @@ class PublicationController extends AbstractController
         foreach ($paginator as $publication) {
             $publications[] = $publication;
         }
+        $last = $publications[count($publications) - 1]->getId();
+        $left = $this->getDoctrine()->getRepository(Publication::class)->findAllGreaterId($last, $filter);
+        $leftSize = count($left);
 
         //Serialize the response data
         $data = $this->serializer->serialize($publications, 'json', [
@@ -154,7 +157,11 @@ class PublicationController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('publications'=>json_decode($data));
+        $response=array(
+            'publications'=>json_decode($data),
+            'itemSize'=>$itemSize,
+            'leftSize'=>$leftSize
+        );
 
         return new JsonResponse($response, 200);
     }
@@ -195,7 +202,7 @@ class PublicationController extends AbstractController
         //Get cursor and filter
         $cursor = $request->query->get('cursor', -1);
         $filter = strtolower($request->query->get('filter', ""));
-        $itemSize = 25;
+        $itemSize = 24;
 
         //Get category
         $doctrine = $this->getDoctrine();
@@ -217,6 +224,9 @@ class PublicationController extends AbstractController
         foreach ($paginator as $publication) {
             $publications[] = $publication;
         }
+        $last = $publications[count($publications) - 1]->getId();
+        $left = $doctrine->getRepository(Publication::class)->findAllGreaterIdByCategory($last, $filter, $name, $names);
+        $leftSize = count($left);
 
         //Serialize the response data
         $data = $this->serializer->serialize($publications, 'json', [
@@ -224,7 +234,11 @@ class PublicationController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('publications'=>json_decode($data));
+        $response=array(
+            'publications'=>json_decode($data),
+            'itemSize'=>$itemSize,
+            'leftSize'=>$leftSize
+        );
 
         return new JsonResponse($response, 200);
     }
@@ -264,7 +278,7 @@ class PublicationController extends AbstractController
         //Get cursor and filter
         $cursor = $request->query->get('cursor', -1);
         $filter = strtolower($request->query->get('filter', ""));
-        $itemSize = 25;
+        $itemSize = 24;
 
         //Get expert
         $doctrine = $this->getDoctrine();
@@ -285,13 +299,21 @@ class PublicationController extends AbstractController
             $publications[] = $publication;
         }
 
+        $last = $publications[count($publications) - 1]->getId();
+        $left = $doctrine->getRepository(Publication::class)->findAllGreaterIdByExpert($last, $filter, $names);
+        $leftSize = count($left);
+
         //Serialize the response data
         $data = $this->serializer->serialize($publications, 'json', [
             AbstractNormalizer::GROUPS => ['publications']
         ]);
 
         //Create the response
-        $response=array('publications'=>json_decode($data));
+        $response=array(
+            'publications'=>json_decode($data),
+            'itemSize'=>$itemSize,
+            'leftSize'=>$leftSize
+        );
 
         return new JsonResponse($response, 200);
     }
