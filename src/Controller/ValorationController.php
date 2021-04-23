@@ -113,6 +113,55 @@ class ValorationController extends AbstractController
         return new JsonResponse($response,200);
     }
 
+    #[Route('/api/rating/feedback/{id}', name: 'rating_get', methods: ['GET'])]
+    /**
+     * @Route("/api/rating/feedback/{id}", name="rating_get", methods={"GET"})
+     * @OA\Response(response=200, description="Gets the rate from the feedback",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="rating", type="object",
+     *          @OA\Property(property="id", type="integer"),
+     *          @OA\Property(property="grade", type="integer"),
+     *          @OA\Property(property="date", type="string", format="date-time"))
+     * ))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Tag(name="Ratings")
+     * @Security(name="Bearer")
+     * @param $id
+     * @return Response
+     */
+    public function getRating($id): Response
+    {
+        //Get the doctrine
+        $doctrine = $this->getDoctrine();
+        $em = $doctrine->getManager();
+
+        //Get the feedback
+        $feedback = $doctrine->getRepository(Feedback::class)->find($id);
+        if ($feedback == null) {
+            $response=array('error'=>'Feedback not found');
+            return new JsonResponse($response,404);
+        }
+
+        //Get the rating
+        $rating = $feedback->getValoration();
+        if ($rating === null) {
+            $rating = new Valoration();
+            $rating->setGrade(0);
+        }
+        //Serialize the response data
+        $data = $this->serializer->serialize($rating, 'json', [
+            AbstractNormalizer::GROUPS => ['ratings']
+        ]);
+
+        //Create the response
+        $response=array('rating'=>json_decode($data));
+
+        return new JsonResponse($response,200);
+    }
+
     #[Route('/api/rating/feedback/{id}', name: 'rating_put', methods: ['PUT'])]
     /**
      * @Route("/api/rating/feedback/{id}", name="rating_put", methods={"PUT"})
