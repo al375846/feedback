@@ -33,7 +33,7 @@ class Publication
     private $title;
 
     /**
-     * @ORM\ManyToOne(targetEntity=Category::class)
+     * @ORM\ManyToOne(targetEntity=Category::class, cascade={"persist", "remove"})
      * @ORM\JoinColumn(nullable=false)
      * @OA\Property(ref=@Model(type=Category::class))
      * @Groups({"publications", "incidences", "feedbacks"})
@@ -76,7 +76,7 @@ class Publication
     private $images = [];
 
     /**
-     * @ORM\ManyToOne(targetEntity=Apprentice::class, inversedBy="publications", cascade={"remove", "persist"})
+     * @ORM\ManyToOne(targetEntity=Apprentice::class, inversedBy="publications")
      * @ORM\JoinColumn(nullable=true)
      * @OA\Property(ref=@Model(type=Apprentice::class))
      * @Groups({"publications", "incidences", "feedbacks"})

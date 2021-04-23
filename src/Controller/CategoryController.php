@@ -2,6 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\ExpertCategories;
+use App\Entity\Feedback;
+use App\Entity\Incidence;
+use App\Entity\Publication;
 use App\Service\SerializerService;
 use App\Utils\CategoryTree;
 use App\Entity\Category;
@@ -199,6 +203,28 @@ class CategoryController extends AbstractController
         if ($category == null) {
             $response=array('error'=>'Category not found');
             return new JsonResponse($response,404);
+        }
+
+        $publications = $doctrine->getRepository(Publication::class)->findBy(['category' => $category]);
+        foreach ($publications as $pub) {
+            $incidences = $doctrine->getRepository(Incidence::class)->findBy(['publication' => $pub]);
+            foreach ($incidences as $inc)
+                $em->remove($inc);
+            $feedbacks = $doctrine->getRepository(Feedback::class)->findBy(['publication' => $pub]);
+            foreach ($feedbacks as $feed)
+                $em->remove($feed);
+            $em->remove($pub);
+        }
+        $categories = $doctrine->getRepository(Category::class)->findBy(['parent' => $category]);
+        foreach ($categories as $cat) {
+            $category->removeSubcategory($cat);
+            $cat->setParent(null);
+            $em->remove($cat);
+        }
+
+        $fav = $doctrine->getRepository(ExpertCategories::class)->findBy(['category' => $category]);
+        foreach ($fav as $cat) {
+            $em->remove($cat);
         }
 
         //Remove the category
