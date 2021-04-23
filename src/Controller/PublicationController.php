@@ -404,7 +404,8 @@ class PublicationController extends AbstractController
             $response=array('error'=>'Publication not found');
             return new JsonResponse($response,404);
         }
-        $feedbacks = $doctrine->getRepository(Feedback::class)->findBy(['publication' => $publication]);
+        $feedbacks = $doctrine->getRepository(Feedback::class)
+            ->findBy(['publication' => $publication], ['date' => 'DESC']);
 
         //Serialize the response data
         $data = $this->serializer->serialize($feedbacks, 'json', [
