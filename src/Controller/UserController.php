@@ -103,9 +103,9 @@ class UserController extends AbstractController
         $em = $doctrine->getManager();
 
         //Get old user
-        $user = $this->getUser();
+        $user = new User();
         $old = $this->getUser();
-        $username = $user->getUsername();
+        $username = $old->getUsername();
         $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username' => $username]);
         $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username' => $username]);
 
@@ -133,10 +133,15 @@ class UserController extends AbstractController
                 $em->persist($expert);
             }
         }
-        $user->setPassword($old->getPassword());
+        $old->setUsername($user->getUsername());
+        $old->setEmail($user->getEmail());
+        $old->setName($user->getName());
+        $old->setLastname($user->getLastname());
+        $old->setAddress($user->getAddress());
+        $old->setPhone($user->getPhone());
 
         //Save new user
-        $em->persist($user);
+        $em->persist($old);
         $em->flush();
 
         //Serialize the response data
