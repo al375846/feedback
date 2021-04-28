@@ -318,19 +318,17 @@ class FileController extends AbstractController
             $array = explode(".", $filename);
             $extension = $array[count($array) - 1];
             if ($extension == "pdf") {
-                $filesize = filesize($file);
-                $filesize = round($filesize / 1024);
-                $document[count($document)] = [$filename, $filesize];
+                $document[count($document)] = $filename;
             }
             elseif ($extension == "mp4") {
                 $filesize = filesize($file);
                 $filesize = round($filesize / 1024);
-                $video[count($video)] = [$filename, $filesize];
+                $video[count($video)] = $filename;
             }
             elseif ($extension == "jpg" or $extension == "jpeg" or $extension == "png") {
                 $filesize = filesize($file);
                 $filesize = round($filesize / 1024);
-                $images[count($images)] = [$filename, $filesize];
+                $images[count($images)] = $filename;
             }
         }
 
