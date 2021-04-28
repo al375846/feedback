@@ -33,7 +33,7 @@ class Publication
     private $title;
 
     /**
-     * @ORM\ManyToOne(targetEntity=Category::class, cascade={"persist", "remove"})
+     * @ORM\ManyToOne(targetEntity=Category::class)
      * @ORM\JoinColumn(nullable=false)
      * @OA\Property(ref=@Model(type=Category::class))
      * @Groups({"publications", "incidences", "feedbacks"})

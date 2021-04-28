@@ -540,6 +540,7 @@ class PublicationController extends AbstractController
             $apprentice->removePublication($publication);
             $em->persist($apprentice);
         }
+        $publication->setApprentice(null);
 
         //Remove the publication
         $em->remove($publication);
