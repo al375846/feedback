@@ -88,7 +88,7 @@ class ExpertController extends AbstractController
         $em->flush();
 
         //Serialize the response data
-        $data = $this->serializer->serialize($favCat, 'json', [
+        $data = $this->serializer->serialize($favCat->getCategory(), 'json', [
             AbstractNormalizer::GROUPS => ['fav_categories']
         ]);
 

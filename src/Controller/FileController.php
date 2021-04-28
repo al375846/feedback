@@ -82,7 +82,7 @@ class FileController extends AbstractController
      * @Route("/api/file/feedback/{id}", name="feedback_file_post", methods={"POST"})
      * @OA\Response(response=200, description="Adds a file to feedbacks",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="feedback", type="object",
+     *     @OA\Property(property="documents", type="object",
      *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="images", type="array", @OA\Items(type="string"))
@@ -138,7 +138,7 @@ class FileController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('feedback'=>json_decode($data));
+        $response=array('documents'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -148,7 +148,7 @@ class FileController extends AbstractController
      * @Route("/api/file/publication/{id}", name="publication_file_post", methods={"POST"})
      * @OA\Response(response=200, description="Adds a file to publication",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="publication", type="object",
+     *     @OA\Property(property="documents", type="object",
      *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="images", type="array", @OA\Items(type="string"))
@@ -200,7 +200,7 @@ class FileController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('publication'=>json_decode($data));
+        $response=array('documents'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -319,12 +319,21 @@ class FileController extends AbstractController
             $extension = $array[count($array) - 1];
             if ($extension == "pdf") {
                 $document[count($document)] = $filename;
+                $filesize = filesize($file);
+                $filesize = round($filesize / 1024);
+                $document[count($document)] = $filesize;
             }
             elseif ($extension == "mp4") {
                 $video[count($video)] = $filename;
+                $filesize = filesize($file);
+                $filesize = round($filesize / 1024);
+                $video[count($video)] = $filesize;
             }
             elseif ($extension == "jpg" or $extension == "jpeg" or $extension == "png") {
                 $images[count($images)] = $filename;
+                $filesize = filesize($file);
+                $filesize = round($filesize / 1024);
+                $images[count($images)] = $filesize;
             }
         }
 
