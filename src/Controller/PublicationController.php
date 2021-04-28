@@ -41,6 +41,7 @@ class PublicationController extends AbstractController
      *     @OA\Property(property="id", type="integer"),
      *     @OA\Property(property="title", type="string"),
      *     @OA\Property(property="category", type="object",
+     *          @OA\Property(property="id", type="integer"),
      *          @OA\Property(property="name", type="string")),
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="tags", type="array", @OA\Items(type="string")),

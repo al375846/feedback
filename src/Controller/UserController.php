@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Apprentice;
 use App\Entity\Expert;
 use App\Entity\NoActiveUser;
+use App\Entity\PasswordChange;
 use App\Entity\User;
 use App\Service\SerializerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -160,13 +161,14 @@ class UserController extends AbstractController
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="done", type="boolean")
      * ))
-     * @OA\Response(response=409, description="Username already exists",
+     * @OA\Response(response=409, description="Password mismatches",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="error", type="string")
      * ))
      * @OA\RequestBody(description="Input data",
      *     @OA\JsonContent(type="object",
-     *     @OA\Property(property="password", type="string")
+     *     @OA\Property(property="oldPassword", type="string"),
+     *     @OA\Property(property="newPassword", type="string")
      * ))
      * @OA\Tag(name="Users")
      * @Security(name="Bearer")
@@ -183,14 +185,22 @@ class UserController extends AbstractController
         $user = $this->getUser();
         $username = $user->getUsername();
         $old = $doctrine->getRepository(User::class)->findOneBy(['username' => $username]);
+        $passwords = new PasswordChange();
 
         //Deserialize to obtain object data
-        $this->serializer->deserialize($request->getContent(), User::class, 'json', [
-            AbstractNormalizer::OBJECT_TO_POPULATE => $user
+        $this->serializer->deserialize($request->getContent(), PasswordChange::class, 'json', [
+            AbstractNormalizer::OBJECT_TO_POPULATE => $passwords
         ]);
 
+        //Check old password is correct
+        $check = $this->encoder->isPasswordValid($user, $passwords->getOldPassword());
+        if (!$check) {
+            $response=array('error'=>'Password mismatches');
+            return new JsonResponse($response,409);
+        }
+
         //Set new password
-        $password = $this->encoder->encodePassword($old, $user->getPassword());
+        $password = $this->encoder->encodePassword($old, $passwords->getNewPassword());
         $old->setPassword($password);
 
         //Save new user
@@ -206,9 +216,49 @@ class UserController extends AbstractController
         return new JsonResponse($response, 200);
     }
 
-    #[Route('/api/user/{pass}', name: 'user_delete', methods: ['DELETE'])]
+    #[Route('/api/user/check_password', name: 'check_password', methods: ['POST'])]
     /**
-     * @Route("/api/user/{pass}", name="user_delete", methods={"DELETE"})
+     * @Route("/api/user/check_password", name="check_password", methods={"POST"})
+     * @OA\Response(response=200, description="Edits a user",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="correct", type="boolean")
+     * ))
+     * @OA\RequestBody(description="Input data",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="password", type="string")
+     * ))
+     * @OA\Tag(name="Users")
+     * @Security(name="Bearer")
+     * @param Request $request
+     * @return Response
+     */
+    public function checkPassword(Request $request): Response
+    {
+        //Get the doctrine
+        $doctrine = $this->getDoctrine();
+
+        //Get old user
+        $user = new User();
+        $username = $user->getUsername();
+        $old = $this->getUser();
+
+        //Deserialize to obtain object data
+        $this->serializer->deserialize($request->getContent(), User::class, 'json', [
+            AbstractNormalizer::OBJECT_TO_POPULATE => $user
+        ]);
+
+        //Check password
+        $check = $this->encoder->isPasswordValid($old, $user->getPassword());
+
+        //Create the response
+        $response=array('correct'=>$check);
+
+        return new JsonResponse($response, 200);
+    }
+
+    #[Route('/api/user', name: 'user_delete', methods: ['DELETE'])]
+    /**
+     * @Route("/api/user", name="user_delete", methods={"DELETE"})
      * @OA\Response(response=200, description="Deletes a user",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="deleted", type="boolean")
@@ -235,12 +285,6 @@ class UserController extends AbstractController
 
         //Get the user
         $user = $this->getUser();
-
-        $match = $this->encoder->isPasswordValid($user, $pass);
-        if ($match === false) {
-            $response=array('error'=>'Password is not correct');
-            return new JsonResponse($response,404);
-        }
 
         $username = $user->getUsername();
         $user = $doctrine->getRepository(User::class)->findOneBy(['username' => $username]);

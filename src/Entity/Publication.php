@@ -56,21 +56,21 @@ class Publication
 
     /**
      * @ORM\Column(type="array", nullable=true)
-     * @OA\Property(type="array", @OA\Items(type="string"))
+     * @OA\Property(type="array", @OA\Items(type="json"))
      * @Groups({"publications", "incidences"})
      */
     private $video = [];
 
     /**
      * @ORM\Column(type="array", nullable=true)
-     * @OA\Property(type="array", @OA\Items(type="string"))
+     * @OA\Property(type="array", @OA\Items(type="json"))
      * @Groups({"publications", "incidences"})
      */
     private $document = [];
 
     /**
      * @ORM\Column(type="array", nullable=true)
-     * @OA\Property(type="array", @OA\Items(type="string"))
+     * @OA\Property(type="array", @OA\Items(type="json"))
      * @Groups({"publications", "incidences"})
      */
     private $images = [];
