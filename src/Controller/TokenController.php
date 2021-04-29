@@ -108,7 +108,7 @@ class TokenController extends AbstractController
         $notificationsIds = $complete->getNotificationsids();
         if ($notificationsIds === null)
             $notificationsIds = [];
-        $notificationsIds[count($notificationsIds) - 1] = $onesignal->getOnesignal();
+        $notificationsIds[count($notificationsIds)] = $onesignal->getOnesignal();
 
         $complete->setNotificationsids($notificationsIds);
         $em->persist($complete);
