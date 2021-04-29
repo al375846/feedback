@@ -78,6 +78,16 @@ class User implements UserInterface, \Serializable
      */
     private $phone;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $onesignalid;
+
+    /**
+     * @ORM\Column(type="array", nullable=true)
+     */
+    private $notificationsids = [];
+
     public function getId(): ?int
     {
         return $this->id;
@@ -247,5 +257,29 @@ class User implements UserInterface, \Serializable
             // see section on salt below
             // $this->salt
             ) = unserialize($serialized);
+    }
+
+    public function getOnesignalid(): ?string
+    {
+        return $this->onesignalid;
+    }
+
+    public function setOnesignalid(?string $onesignalid): self
+    {
+        $this->onesignalid = $onesignalid;
+
+        return $this;
+    }
+
+    public function getNotificationsids(): ?array
+    {
+        return $this->notificationsids;
+    }
+
+    public function setNotificationsids(?array $notificationsids): self
+    {
+        $this->notificationsids = $notificationsids;
+
+        return $this;
     }
 }
