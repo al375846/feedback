@@ -159,6 +159,7 @@ class TokenController extends AbstractController
         }
         else {
             $response=array('done'=>false);
+            return new JsonResponse($response,200);
         }
 
         $complete->setNotificationsids($notificationsIds);
