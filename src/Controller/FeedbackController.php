@@ -96,7 +96,7 @@ class FeedbackController extends AbstractController
         //Notify apprentice
         $ids = $publication->getApprentice()->getUserdata()->getNotificationsids();
         $message = 'Has recibido feedback en la publicación ' . $publication->getTitle();
-        $this->notification->sendMessage($ids, $message);
+        $this->notification->enqueueMessage($ids, $message);
 
         //Serialize the response data
         $data = $this->serializer->serialize($feedback, 'json', [

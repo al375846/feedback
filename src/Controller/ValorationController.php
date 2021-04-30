@@ -110,7 +110,7 @@ class ValorationController extends AbstractController
         $ids = $feedback->getExpert()->getUserdata()->getNotificationsids();
         $message = 'Has recibido una valoración en el feedback de la publicación '
             . $feedback->getPublication()->getTitle();
-        $this->notification->sendMessage($ids, $message);
+        $this->notification->enqueueMessage($ids, $message);
 
         //Serialize the response data
         $data = $this->serializer->serialize($rating, 'json', [
