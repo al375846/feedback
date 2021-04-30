@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Apprentice;
 use App\Entity\Feedback;
 use App\Entity\Valoration;
+use App\Service\NotificationService;
 use App\Service\SerializerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -22,10 +23,14 @@ class ValorationController extends AbstractController
      * @var Serializer
      */
     private Serializer $serializer;
-
-    public function __construct(SerializerService $serializerService)
+    /**
+     * @var NotificationService
+     */
+    private NotificationService $notification;
+    public function __construct(SerializerService $serializerService, NotificationService $notificationService)
     {
         $this->serializer = $serializerService->getSerializer();
+        $this->notification = $notificationService;
     }
 
     #[Route('/api/rating/feedback/{id}', name: 'rating_post', methods: ['POST'])]
@@ -101,6 +106,11 @@ class ValorationController extends AbstractController
         $em->persist($rating);
         $em->persist($feedback);
         $em->flush();
+
+        $ids = $feedback->getExpert()->getUserdata()->getNotificationsids();
+        $message = 'Has recibido una valoración en el feedback de la publicación '
+            . $feedback->getPublication()->getTitle();
+        $this->notification->sendMessage($ids, $message);
 
         //Serialize the response data
         $data = $this->serializer->serialize($rating, 'json', [

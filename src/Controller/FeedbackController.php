@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Expert;
 use App\Entity\Feedback;
+use App\Service\NotificationService;
 use App\Service\SerializerService;
 use App\Entity\Publication;
 use Doctrine\ORM\Tools\Pagination\Paginator;
@@ -23,10 +24,15 @@ class FeedbackController extends AbstractController
      * @var Serializer
      */
     private Serializer $serializer;
+    /**
+     * @var NotificationService
+     */
+    private NotificationService $notification;
 
-    public function __construct(SerializerService $serializerService)
+    public function __construct(SerializerService $serializerService, NotificationService $notificationService)
     {
         $this->serializer = $serializerService->getSerializer();
+        $this->notification = $notificationService;
     }
 
     #[Route('/api/feedback/publication/{id}', name: 'feedback_post', methods: ['POST'])]
@@ -86,6 +92,11 @@ class FeedbackController extends AbstractController
         //Save the feedback
         $em->persist($feedback);
         $em->flush();
+
+        //Notify apprentice
+        $ids = $publication->getApprentice()->getUserdata()->getNotificationsids();
+        $message = 'Has recibido feedback en la publicación ' . $publication->getTitle();
+        $this->notification->sendMessage($ids, $message);
 
         //Serialize the response data
         $data = $this->serializer->serialize($feedback, 'json', [
