@@ -45,6 +45,13 @@ class Suggestion
      */
     private $parent;
 
+    /**
+     * @ORM\Column(type="string", length=255)
+     * @OA\Property(type="string")
+     * @Groups({"suggestions"})
+     */
+    private $type;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -82,6 +89,18 @@ class Suggestion
     public function setParent(?Category $parent): self
     {
         $this->parent = $parent;
+
+        return $this;
+    }
+
+    public function getType(): ?string
+    {
+        return $this->type;
+    }
+
+    public function setType(string $type): self
+    {
+        $this->type = $type;
 
         return $this;
     }
