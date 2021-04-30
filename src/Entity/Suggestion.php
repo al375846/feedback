@@ -52,6 +52,13 @@ class Suggestion
      */
     private $type;
 
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     * @OA\Property(type="datetime")
+     * @Groups({"suggestions"})
+     */
+    private $date;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -101,6 +108,18 @@ class Suggestion
     public function setType(string $type): self
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    public function getDate(): ?\DateTimeInterface
+    {
+        return $this->date;
+    }
+
+    public function setDate(?\DateTimeInterface $date): self
+    {
+        $this->date = $date;
 
         return $this;
     }

@@ -40,7 +40,8 @@ class SuggestionController extends AbstractController
      *     @OA\Property(property="parent", type="object", nullable="true",
      *          @OA\Property(property="id", type="integer"),
      *          @OA\Property(property="name", type="string"),
-     *          @OA\Property(property="description", type="string"))
+     *          @OA\Property(property="description", type="string")),
+     *     @OA\Property(property="date", type="string", format="date-time")
      * )))
      * @OA\Response(response=404, description="Not found",
      *     @OA\JsonContent(type="object",
@@ -57,6 +58,7 @@ class SuggestionController extends AbstractController
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="parent", type="object", nullable="true",
      *          @OA\Property(property="name", type="string")),
+     *     @OA\Property(property="date", type="string", format="date-time")
      * ))
      * @OA\Tag(name="Suggestions")
      * @Security(name="Bearer")
@@ -120,7 +122,8 @@ class SuggestionController extends AbstractController
      *     @OA\Property(property="parent", type="object",
      *          @OA\Property(property="id", type="integer"),
      *          @OA\Property(property="name", type="string"),
-     *          @OA\Property(property="description", type="string"))
+     *          @OA\Property(property="description", type="string")),
+     *     @OA\Property(property="date", type="string", format="date-time")
      * ))))
      * @OA\Tag(name="Suggestions")
      * @Security(name="Bearer")
@@ -128,7 +131,7 @@ class SuggestionController extends AbstractController
     public function getSuggestions(): Response
     {
         //Get suggestions
-        $suggestions = $this->getDoctrine()->getRepository(Suggestion::class)->findAll();
+        $suggestions = $this->getDoctrine()->getRepository(Suggestion::class)->findBy([], ['id'=>'DESC']);
 
         //Serialize the response data
         $data = $this->serializer->serialize($suggestions, 'json', [
@@ -154,7 +157,8 @@ class SuggestionController extends AbstractController
      *     @OA\Property(property="parent", type="object",
      *          @OA\Property(property="id", type="integer"),
      *          @OA\Property(property="name", type="string"),
-     *          @OA\Property(property="description", type="string"))
+     *          @OA\Property(property="description", type="string")),
+     *     @OA\Property(property="date", type="string", format="date-time")
      * )))
      * @OA\Tag(name="Suggestions")
      * @Security(name="Bearer")
