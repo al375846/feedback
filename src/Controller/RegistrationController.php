@@ -252,4 +252,67 @@ class RegistrationController extends AbstractController
 
         return new JsonResponse($response, 200);
     }
+
+    #[Route('/api/recovery/password', name: 'recovery_password', methods: ['POST'])]
+    /**
+     * @Route("/api/recovery/password", name="recovery_password", methods={"POST"})
+     * @OA\Response(response=200, description="Recovers the password of a user",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="user", type="object",
+     *     @OA\Property(property="username", type="string"),
+     *     @OA\Property(property="email", type="string"),
+     *     @OA\Property(property="name", type="string"),
+     *     @OA\Property(property="lastname", type="string"),
+     *     @OA\Property(property="address", type="string"),
+     *     @OA\Property(property="phone", type="string")
+     * )))
+     * @OA\Response(response=404, description="Not found",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\Response(response=400, description="Bad request",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="error", type="string")
+     * ))
+     * @OA\RequestBody(description="Input data format",
+     *     @OA\JsonContent(type="object",
+     *     @OA\Property(property="username", type="string"),
+     *     @OA\Property(property="email", type="string"),
+     *     @OA\Property(property="password", type="string")
+     * ))
+     * @OA\Tag(name="Registration")
+     * @Security()
+     * @param Request $request
+     * @return Response
+     */
+    public function recoveryPassword(Request $request): Response
+    {
+        //Deserialize to obtain object data
+        $user = $this->serializer->deserialize($request->getContent(),User::class, 'json');
+        $email = $user->getEmail();
+        $username = $user->getUsername();
+
+        //Get the doctrine
+        $doctrine = $this->getDoctrine();
+        $em = $doctrine->getManager();
+
+        //Get user
+        $old = $doctrine->getRepository(User::class)
+            ->findOneBy(['username'=>$username, 'email'=>$email]);
+        $password = $this->encoder->encodePassword($old, $user->getPassword());
+        $old->setPassword($password);
+
+        //Save the user
+        $em->persist($user);
+        $em->remove($old);
+        $em->flush();
+
+        //Serialize the response data
+        $data = $this->serializer->serialize($user, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
+
+        //Create the response
+        $response = array('user'=>json_decode($data));
+
+        return new JsonResponse($response, 200);
+    }
 }
