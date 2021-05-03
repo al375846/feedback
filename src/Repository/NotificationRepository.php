@@ -23,14 +23,13 @@ class NotificationRepository extends ServiceEntityRepository
     * @return Notification Returns a Notification object
     */
 
-    public function findByFisrtNotSent()
+    public function findByNotSent()
     {
         return $this->createQueryBuilder('n')
             ->andWhere('n.sent = false')
             ->orderBy('n.id', 'ASC')
-            ->setMaxResults(1)
             ->getQuery()
-            ->getOneOrNullResult()
+            ->getResult()
         ;
     }
 

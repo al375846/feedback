@@ -25,8 +25,8 @@ class NotificationService {
 
     function sendMessage()
     {
-        $notification = $this->em->getRepository(Notification::class)->findByFisrtNotSent();
-        if ($notification !== null) {
+        $notifications = $this->em->getRepository(Notification::class)->findByNotSent();
+        foreach ($notifications as $notification) {
             $user = $this->em->getRepository(User::class)->findOneBy(['username'=>$notification->getUsername()]);
             $ids = [];
             if ($user !== null)
