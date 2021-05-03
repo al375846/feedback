@@ -64,8 +64,8 @@ class IncidenceController extends AbstractController
 
         //Get the publication
         $publication = $doctrine->getRepository(Publication::class)->find($id);
-        if ($publication == null) {
-            $response=array('error'=>'Publication not found');
+        if ($publication === null) {
+            $response = array('error'=>'Publication not found');
             return new JsonResponse($response,404);
         }
         $incidence->setPublication($publication);
@@ -81,7 +81,7 @@ class IncidenceController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('incidence'=>json_decode($data));
+        $response = array('incidence'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -111,7 +111,7 @@ class IncidenceController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('incidences'=>json_decode($data));
+        $response = array('incidences'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -156,7 +156,7 @@ class IncidenceController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('incidence'=>json_decode($data));
+        $response = array('incidence'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -185,8 +185,8 @@ class IncidenceController extends AbstractController
 
         //Get the incidence
         $incidence = $this->getDoctrine()->getRepository(Incidence::class)->find($id);
-        if ($incidence == null) {
-            $response=array('error'=>'Incidence not found');
+        if ($incidence === null) {
+            $response = array('error'=>'Incidence not found');
             return new JsonResponse($response,404);
         }
 
@@ -195,7 +195,7 @@ class IncidenceController extends AbstractController
         $em->flush();
 
         //Create the response
-        $response=array('deleted'=>true);
+        $response = array('deleted'=>true);
 
         return new JsonResponse($response,200);
     }

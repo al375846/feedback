@@ -78,8 +78,8 @@ class FeedbackController extends AbstractController
 
         //Get publication
         $publication = $doctrine->getRepository(Publication::class)->find($id);
-        if ($publication == null) {
-            $response=array('error'=>'Publication not found');
+        if ($publication === null) {
+            $response = array('error'=>'Publication not found');
             return new JsonResponse($response,404);
         }
         $feedback->setPublication($publication);
@@ -94,9 +94,9 @@ class FeedbackController extends AbstractController
         $em->flush();
 
         //Notify apprentice
-        $ids = $publication->getApprentice()->getUserdata()->getNotificationsids();
+        $username = $publication->getApprentice()->getUsername();
         $message = 'Has recibido feedback en la publicación ' . $publication->getTitle();
-        $this->notification->enqueueMessage($ids, $message);
+        $this->notification->enqueueMessage($username, $message);
 
         //Serialize the response data
         $data = $this->serializer->serialize($feedback, 'json', [
@@ -104,7 +104,7 @@ class FeedbackController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('feedback'=>json_decode($data));
+        $response = array('feedback'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -166,7 +166,7 @@ class FeedbackController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('feedbacks'=>json_decode($data));
+        $response = array('feedbacks'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -201,8 +201,8 @@ class FeedbackController extends AbstractController
     public function getFeedback($id): Response {
         //Get feedback
         $feedback = $this->getDoctrine()->getRepository(Feedback::class)->find($id);
-        if ($feedback == null) {
-            $response=array('error'=>'Feedback not found');
+        if ($feedback === null) {
+            $response = array('error'=>'Feedback not found');
             return new JsonResponse($response,404);
         }
 
@@ -212,7 +212,7 @@ class FeedbackController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('feedback'=>json_decode($data));
+        $response = array('feedback'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -257,8 +257,8 @@ class FeedbackController extends AbstractController
 
         //Get old publication
         $old = $doctrine->getRepository(Feedback::class)->find($id);
-        if ($old == null) {
-            $response=array('error'=>'Feedback not found');
+        if ($old === null) {
+            $response = array('error'=>'Feedback not found');
             return new JsonResponse($response,404);
         }
 
@@ -282,7 +282,7 @@ class FeedbackController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('feedback'=>json_decode($data));
+        $response = array('feedback'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -311,8 +311,8 @@ class FeedbackController extends AbstractController
 
         //Get the feedback
         $feedback = $this->getDoctrine()->getRepository(Feedback::class)->find($id);
-        if ($feedback == null) {
-            $response=array('error'=>'Feedback not found');
+        if ($feedback === null) {
+            $response = array('error'=>'Feedback not found');
             return new JsonResponse($response,404);
         }
 
@@ -327,7 +327,7 @@ class FeedbackController extends AbstractController
         $em->flush();
 
         //Create the response
-        $response=array('deleted'=>true);
+        $response = array('deleted'=>true);
 
         return new JsonResponse($response,200);
     }

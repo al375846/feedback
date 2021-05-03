@@ -54,7 +54,7 @@ class RankingController extends AbstractController
         $data = $this->serializer->serialize($rated, 'json');
 
         //Create the response
-        $response=array('ranking'=>json_decode($data));
+        $response = array('ranking'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -82,7 +82,7 @@ class RankingController extends AbstractController
         $data = $this->serializer->serialize($experts, 'json');
 
         //Create the response
-        $response=array('ranking'=>json_decode($data));
+        $response = array('ranking'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -110,7 +110,7 @@ class RankingController extends AbstractController
         $data = $this->serializer->serialize($categories, 'json');
 
         //Create the response
-        $response=array('ranking'=>json_decode($data));
+        $response = array('ranking'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }

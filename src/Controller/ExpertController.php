@@ -62,8 +62,8 @@ class ExpertController extends AbstractController
 
         //Get category
         $cat = $doctrine->getRepository(Category::class)->find($id);
-        if ($cat == null) {
-            $response=array('error'=>'Category not found');
+        if ($cat === null) {
+            $response = array('error'=>'Category not found');
             return new JsonResponse($response,404);
         }
 
@@ -79,7 +79,7 @@ class ExpertController extends AbstractController
             'category'=>$cat, 'expert' =>$expert
         ]);
         if (count($favCatExists) > 0 ) {
-            $response=array('error'=>'Category already favourite');
+            $response = array('error'=>'Category already favourite');
             return new JsonResponse($response,409);
         }
         $expert->addFavCategory($favCat);
@@ -93,7 +93,7 @@ class ExpertController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('favCategory'=>json_decode($data));
+        $response = array('favCategory'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -138,7 +138,7 @@ class ExpertController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('favCategories'=>json_decode($data));
+        $response = array('favCategories'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -173,8 +173,8 @@ class ExpertController extends AbstractController
 
         //Get category
         $category = $doctrine->getRepository(Category::class)->find($id);
-        if ($category == null) {
-            $response=array('error'=>'Category not found');
+        if ($category === null) {
+            $response = array('error'=>'Category not found');
             return new JsonResponse($response,404);
         }
 
@@ -182,8 +182,8 @@ class ExpertController extends AbstractController
         $favCat = $doctrine->getRepository(ExpertCategories::class)->findOneBy([
             'expert'=>$expert, 'category'=>$category
         ]);
-        if ($favCat == null) {
-            $response=array('error'=>'Favourite category not found');
+        if ($favCat === null) {
+            $response = array('error'=>'Favourite category not found');
             return new JsonResponse($response,404);
         }
 
@@ -193,7 +193,7 @@ class ExpertController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('favCategory'=>json_decode($data));
+        $response = array('favCategory'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -226,8 +226,8 @@ class ExpertController extends AbstractController
 
         //Get category
         $category = $doctrine->getRepository(Category::class)->find($id);
-        if ($category == null) {
-            $response=array('error'=>'Category not found');
+        if ($category === null) {
+            $response = array('error'=>'Category not found');
             return new JsonResponse($response,404);
         }
 
@@ -235,8 +235,8 @@ class ExpertController extends AbstractController
             'expert'=>$expert, 'category'=>$category
         ]);
 
-        if ($favCat == null) {
-            $response=array('error'=>'Favourite category not found');
+        if ($favCat === null) {
+            $response = array('error'=>'Favourite category not found');
             return new JsonResponse($response,404);
         }
 
@@ -246,7 +246,7 @@ class ExpertController extends AbstractController
         $em->flush();
 
         //Create the response
-        $response=array('deleted'=>true);
+        $response = array('deleted'=>true);
 
         return new JsonResponse($response,200);
     }
@@ -279,7 +279,7 @@ class ExpertController extends AbstractController
      * @Security(name="Bearer")
      * @return Response
      */
-    public function getPublicationsUser(): Response
+    public function getFeedbackUser(): Response
     {
         //Get the doctrine
         $doctrine = $this->getDoctrine();
@@ -289,8 +289,8 @@ class ExpertController extends AbstractController
         $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username'=>$username]);
 
         //Check if the user is an apprentice
-        if ($expert == null) {
-            $response=array('error'=>'The user is not an expert');
+        if ($expert === null) {
+            $response = array('error'=>'The user is not an expert');
             return new JsonResponse($response, 409);
         }
 
@@ -304,7 +304,7 @@ class ExpertController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('feedbacks'=>json_decode($data));
+        $response = array('feedbacks'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -342,8 +342,8 @@ class ExpertController extends AbstractController
         $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username'=>$username]);
 
         //Check if the user is an apprentice
-        if ($expert == null) {
-            $response=array('error'=>'The user is not an expert');
+        if ($expert === null) {
+            $response = array('error'=>'The user is not an expert');
             return new JsonResponse($response, 409);
         }
 
@@ -385,7 +385,7 @@ class ExpertController extends AbstractController
         $data = $this->serializer->serialize($history, 'json');
 
         //Create the response
-        $response=array('history'=>json_decode($data));
+        $response = array('history'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }

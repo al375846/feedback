@@ -85,20 +85,20 @@ class RegistrationController extends AbstractController
 
         //Check if user already exists
         $old = $doctrine->getRepository(User::class)->findOneBy(['username'=>$user->getUSername()]);
-        if ($old != null) {
-            $response=array('error'=>'User already exists');
+        if ($old !== null) {
+            $response = array('error'=>'User already exists');
             return new JsonResponse($response,409);
         }
 
         //Set type and roles
         $user->setRoles(['ROLE_USER']);
-        if ($type == 'apprentice') {
+        if ($type === 'apprentice') {
             $apprentice = new Apprentice();
             $apprentice->setUsername($user->getUsername());
             $apprentice->setUserdata($user);
             $em->persist($apprentice);
         }
-        elseif ($type == 'expert') {
+        elseif ($type === 'expert') {
             $expert = new Expert();
             $expert->setUsername($user->getUsername());
             $expert->setUserdata($user);
@@ -117,7 +117,7 @@ class RegistrationController extends AbstractController
         $data = $this->serializer->serialize($user, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
 
         //Create the response
-        $response=array('user'=>json_decode($data));
+        $response = array('user'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -125,7 +125,7 @@ class RegistrationController extends AbstractController
     #[Route('/api/recovery', name: 'recovery', methods: ['POST'])]
     /**
      * @Route("/api/recovery", name="recovery", methods={"POST"})
-     * @OA\Response(response=200, description="Adds an expert or apprentice user",
+     * @OA\Response(response=200, description="Recovers an expert or apprentice user",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="user", type="object",
      *     @OA\Property(property="username", type="string"),
@@ -179,20 +179,21 @@ class RegistrationController extends AbstractController
         //Check if is the right user
         $match = $this->encoder->isPasswordValid($user, $password);
         if ($match === false) {
-            $response=array('error'=>'Password is not correct');
+            $response = array('error'=>'Password is not correct');
             return new JsonResponse($response,404);
         }
 
-        if ($old->getType() == 'apprentice') {
+        if ($old->getType() === 'apprentice') {
             $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username'=>$username]);
             $apprentice->setUserdata($user);
             $em->persist($apprentice);
         }
-        if ($old->getType() == 'expert') {
+        if ($old->getType() === 'expert') {
             $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username'=>$username]);
             $expert->setUserdata($user);
             $em->persist($expert);
         }
+
         //Save the user
         $em->persist($user);
         $em->remove($old);
@@ -202,7 +203,7 @@ class RegistrationController extends AbstractController
         $data = $this->serializer->serialize($user, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
 
         //Create the response
-        $response=array('user'=>json_decode($data));
+        $response = array('user'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -210,7 +211,7 @@ class RegistrationController extends AbstractController
     #[Route('/api/check_username', name: 'check_username', methods: ['POST'])]
     /**
      * @Route("/api/check_username", name="check_username", methods={"POST"})
-     * @OA\Response(response=200, description="Adds an expert or apprentice user",
+     * @OA\Response(response=200, description="Checks if username exists",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="exists", type="boolean"),
      * )))
@@ -238,7 +239,6 @@ class RegistrationController extends AbstractController
 
         //Get the doctrine
         $doctrine = $this->getDoctrine();
-        $em = $doctrine->getManager();
 
         //Get user
         $name = $doctrine->getRepository(User::class)->findOneBy(['username'=>$user->getUsername()]);
@@ -248,7 +248,7 @@ class RegistrationController extends AbstractController
             $ret = true;
 
         //Create the response
-        $response=array('exists'=>$ret);
+        $response = array('exists'=>$ret);
 
         return new JsonResponse($response, 200);
     }

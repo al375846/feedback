@@ -74,12 +74,12 @@ class ValorationController extends AbstractController
 
         //Get the feedback
         $feedback = $doctrine->getRepository(Feedback::class)->find($id);
-        if ($feedback == null) {
-            $response=array('error'=>'Feedback not found');
+        if ($feedback === null) {
+            $response = array('error'=>'Feedback not found');
             return new JsonResponse($response,404);
         }
         if ($feedback->getValoration() != null) {
-            $response=array('error'=>'Feedback already rated');
+            $response = array('error'=>'Feedback already rated');
             return new JsonResponse($response,409);
         }
         $rating->setFeedback($feedback);
@@ -87,15 +87,15 @@ class ValorationController extends AbstractController
 
         //Get the apprentice
         $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username' => $user->getUsername()]);
-        if ($apprentice == null) {
-            $response=array('error'=>'User is not apprentice');
+        if ($apprentice === null) {
+            $response = array('error'=>'User is not apprentice');
             return new JsonResponse($response,409);
         }
 
         //Check if the apprentice is the correct one
         $correct_apprentice = $feedback->getPublication()->getApprentice()->getUsername();
-        if ($correct_apprentice != $apprentice->getUsername()) {
-            $response=array('error'=>'You did not receive the feedback');
+        if ($correct_apprentice !== $apprentice->getUsername()) {
+            $response = array('error'=>'You did not receive the feedback');
             return new JsonResponse($response,409);
         }
         $rating->setApprentice($apprentice);
@@ -107,10 +107,10 @@ class ValorationController extends AbstractController
         $em->persist($feedback);
         $em->flush();
 
-        $ids = $feedback->getExpert()->getUserdata()->getNotificationsids();
+        $username = $feedback->getExpert()->getUsername();
         $message = 'Has recibido una valoración en el feedback de la publicación '
             . $feedback->getPublication()->getTitle();
-        $this->notification->enqueueMessage($ids, $message);
+        $this->notification->enqueueMessage($username, $message);
 
         //Serialize the response data
         $data = $this->serializer->serialize($rating, 'json', [
@@ -118,7 +118,7 @@ class ValorationController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('rating'=>json_decode($data));
+        $response = array('rating'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -150,8 +150,8 @@ class ValorationController extends AbstractController
 
         //Get the feedback
         $feedback = $doctrine->getRepository(Feedback::class)->find($id);
-        if ($feedback == null) {
-            $response=array('error'=>'Feedback not found');
+        if ($feedback === null) {
+            $response = array('error'=>'Feedback not found');
             return new JsonResponse($response,404);
         }
 
@@ -167,7 +167,7 @@ class ValorationController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('rating'=>json_decode($data));
+        $response = array('rating'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -175,7 +175,7 @@ class ValorationController extends AbstractController
     #[Route('/api/rating/feedback/{id}', name: 'rating_put', methods: ['PUT'])]
     /**
      * @Route("/api/rating/feedback/{id}", name="rating_put", methods={"PUT"})
-     * @OA\Response(response=200, description="Adds a valoration",
+     * @OA\Response(response=200, description="Edits a valoration",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="rating", type="object",
      *          @OA\Property(property="id", type="integer"),
@@ -210,8 +210,8 @@ class ValorationController extends AbstractController
 
         //Get the old one
         $old = $doctrine->getRepository(Valoration::class)->find($id);
-        if ($old == null) {
-            $response=array('error'=>'Rating not found');
+        if ($old === null) {
+            $response = array('error'=>'Rating not found');
             return new JsonResponse($response,404);
         }
 
@@ -226,7 +226,7 @@ class ValorationController extends AbstractController
         ]);
 
         ///Create the response
-        $response=array('rating'=>json_decode($data));
+        $response = array('rating'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }

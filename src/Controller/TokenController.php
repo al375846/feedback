@@ -68,9 +68,9 @@ class TokenController extends AbstractController
         $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username'=>$username]);
         $expert = $doctrine->getRepository(Expert::class)->findOneBy(['username'=>$username]);
 
-        if ($apprentice != null)
+        if ($apprentice !== null)
             return new JsonResponse(['usertype' => 'apprentice']);
-        elseif ($expert != null)
+        elseif ($expert !== null)
             return new JsonResponse(['usertype' => 'expert']);
         else
             return new JsonResponse(['usertype' => 'admin']);
@@ -115,7 +115,7 @@ class TokenController extends AbstractController
         $em->flush();
 
         //Create the response
-        $response=array('done'=>true);
+        $response = array('done'=>true);
 
         return new JsonResponse($response,200);
 
@@ -158,7 +158,7 @@ class TokenController extends AbstractController
             $notificationsIds = array_values($notificationsIds);
         }
         else {
-            $response=array('done'=>false);
+            $response = array('done'=>false);
             return new JsonResponse($response,200);
         }
 
@@ -167,7 +167,7 @@ class TokenController extends AbstractController
         $em->flush();
 
         //Create the response
-        $response=array('done'=>true);
+        $response = array('done'=>true);
 
         return new JsonResponse($response,200);
 

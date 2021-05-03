@@ -85,7 +85,7 @@ class AdminController extends AbstractController
 
         //Check if user already exists
         $old = $doctrine->getRepository(User::class)->findOneBy(['username'=>$user->getUSername()]);
-        if ($old != null) {
+        if ($old !== null) {
             $response=array('error'=>'User already exists');
             return new JsonResponse($response,409);
         }
@@ -101,7 +101,7 @@ class AdminController extends AbstractController
         $data = $this->serializer->serialize($user, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
 
         //Create the response
-        $response=array('user'=>json_decode($data));
+        $response = array('user'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }

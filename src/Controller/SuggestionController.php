@@ -77,18 +77,18 @@ class SuggestionController extends AbstractController
 
         //Check it doesnt exist
         $sug = $doctrine->getRepository(Suggestion::class)->findOneBy(['name'=>$suggestion->getName()]);
-        if ($sug != null) {
-            $response=array('error'=>'Suggestion already exists');
+        if ($sug !== null) {
+            $response = array('error'=>'Suggestion already exists');
             return new JsonResponse($response,409);
         }
 
         //Get the parent category
         $parentName = $suggestion->getParent();
-        if($parentName != null) {
+        if($parentName !== null) {
             $parentName = $parentName->getName();
             $parent = $doctrine->getRepository(Category::class)->findOneBy(['name'=>$parentName]);
-            if ($parent == null) {
-                $response=array('error'=>'Parent category not found');
+            if ($parent === null) {
+                $response = array('error'=>'Parent category not found');
                 return new JsonResponse($response,404);
             }
             $suggestion->setParent($parent);
@@ -104,7 +104,7 @@ class SuggestionController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('category'=>json_decode($data));
+        $response = array('category'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -139,7 +139,7 @@ class SuggestionController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('suggestions'=>json_decode($data));
+        $response = array('suggestions'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -175,7 +175,7 @@ class SuggestionController extends AbstractController
             [AbstractNormalizer::GROUPS => ['suggestions']]);
 
         //Create the response
-        $response=array('suggestion'=>json_decode($data));
+        $response = array('suggestion'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -183,7 +183,7 @@ class SuggestionController extends AbstractController
     #[Route('/api/suggestion/{id}', name: 'suggestion_delete', methods: ['DELETE'])]
     /**
      * @Route("/api/suggestion/{id}", name="suggestion_delete", methods={"DELETE"})
-     * @OA\Response(response=200, description="Deletes a fav category of an exepert",
+     * @OA\Response(response=200, description="Deletes a suggestion",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="deleted", type="boolean")
      * ))
@@ -204,8 +204,8 @@ class SuggestionController extends AbstractController
 
         //Get the suggestion
         $suggestion = $this->getDoctrine()->getRepository(Suggestion::class)->find($id);
-        if ($suggestion == null) {
-            $response=array('error'=>'Suggestion not found');
+        if ($suggestion === null) {
+            $response = array('error'=>'Suggestion not found');
             return new JsonResponse($response,404);
         }
 
@@ -214,7 +214,7 @@ class SuggestionController extends AbstractController
         $em->flush();
 
         //Create the response
-        $response=array('deleted'=>true);
+        $response = array('deleted'=>true);
 
         return new JsonResponse($response,200);
     }

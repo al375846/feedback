@@ -45,8 +45,8 @@ class PublicationController extends AbstractController
      *          @OA\Property(property="name", type="string")),
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="tags", type="array", @OA\Items(type="string")),
-     *     @OA\Property(property="video", type="string"),
-     *     @OA\Property(property="document", type="string"),
+     *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="apprentice", type="object",
      *          @OA\Property(property="username", type="string")),
@@ -82,8 +82,8 @@ class PublicationController extends AbstractController
         //Get category
         $catName = $publication->getCategory()->getName();
         $category = $doctrine->getRepository(Category::class)->findOneBy(['name'=>$catName]);
-        if ($category == null) {
-            $response=array('error'=>'Category not found');
+        if ($category === null) {
+            $response = array('error'=>'Category not found');
             return new JsonResponse($response,404);
         }
         $publication->setCategory($category);
@@ -103,7 +103,7 @@ class PublicationController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('publication'=>json_decode($data));
+        $response = array('publication'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -158,7 +158,7 @@ class PublicationController extends AbstractController
         ]);
 
         //Create the response
-        $response=array(
+        $response = array(
             'publications'=>json_decode($data),
             'itemSize'=>$itemSize,
             'leftSize'=>$leftSize
@@ -208,8 +208,8 @@ class PublicationController extends AbstractController
         //Get category
         $doctrine = $this->getDoctrine();
         $category = $doctrine->getRepository(Category::class)->find($id);
-        if ($category == null) {
-            $response=array('error'=>'Category not found');
+        if ($category === null) {
+            $response = array('error'=>'Category not found');
             return new JsonResponse($response,404);
         }
         $name = strtolower($category->getName());
@@ -235,7 +235,7 @@ class PublicationController extends AbstractController
         ]);
 
         //Create the response
-        $response=array(
+        $response = array(
             'publications'=>json_decode($data),
             'itemSize'=>$itemSize,
             'leftSize'=>$leftSize
@@ -287,9 +287,9 @@ class PublicationController extends AbstractController
         $expert = $doctrine->getRepository(Expert::class)->findBy(['userdata'=>$user]);
 
         //Get categories
-        $favs = $doctrine->getRepository(ExpertCategories::class)->findBy(['expert'=>$expert]);
+        $favourite = $doctrine->getRepository(ExpertCategories::class)->findBy(['expert'=>$expert]);
         $names = [];
-        foreach ($favs as $fav)
+        foreach ($favourite as $fav)
             $names[] = strtolower($fav->getCategory()->getName());
 
         //Get publications
@@ -310,7 +310,7 @@ class PublicationController extends AbstractController
         ]);
 
         //Create the response
-        $response=array(
+        $response = array(
             'publications'=>json_decode($data),
             'itemSize'=>$itemSize,
             'leftSize'=>$leftSize
@@ -350,8 +350,8 @@ class PublicationController extends AbstractController
     {
         //Get publication
         $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
-        if ($publication == null) {
-            $response=array('error'=>'Publication not found');
+        if ($publication === null) {
+            $response = array('error'=>'Publication not found');
             return new JsonResponse($response,404);
         }
 
@@ -361,7 +361,7 @@ class PublicationController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('publication'=>json_decode($data));
+        $response = array('publication'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -401,8 +401,8 @@ class PublicationController extends AbstractController
 
         //Get publication
         $publication = $doctrine->getRepository(Publication::class)->find($id);
-        if ($publication == null) {
-            $response=array('error'=>'Publication not found');
+        if ($publication === null) {
+            $response = array('error'=>'Publication not found');
             return new JsonResponse($response,404);
         }
         $feedbacks = $doctrine->getRepository(Feedback::class)
@@ -415,7 +415,7 @@ class PublicationController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('feedbacks'=>json_decode($data));
+        $response = array('feedbacks'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -466,8 +466,8 @@ class PublicationController extends AbstractController
 
         //Get old publication
         $old = $doctrine->getRepository(Publication::class)->find($id);
-        if ($old == null) {
-            $response=array('error'=>'Publication not found');
+        if ($old === null) {
+            $response = array('error'=>'Publication not found');
             return new JsonResponse($response,404);
         }
 
@@ -479,8 +479,8 @@ class PublicationController extends AbstractController
         //Get category
         $catName = $old->getCategory()->getName();
         $category = $doctrine->getRepository(Category::class)->findOneBy(['name'=>$catName]);
-        if ($category == null) {
-            $response=array('error'=>'Category not found');
+        if ($category === null) {
+            $response = array('error'=>'Category not found');
             return new JsonResponse($response,404);
         }
         $old->setCategory($category);
@@ -500,7 +500,7 @@ class PublicationController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('publication'=>json_decode($data));
+        $response = array('publication'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -529,14 +529,14 @@ class PublicationController extends AbstractController
 
         //Get the publication
         $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
-        if ($publication == null) {
-            $response=array('error'=>'Publication not found');
+        if ($publication === null) {
+            $response = array('error'=>'Publication not found');
             return new JsonResponse($response,404);
         }
 
         //Get the apprentice
         $apprentice = $publication->getApprentice();
-        if ($apprentice != null) {
+        if ($apprentice !== null) {
             $apprentice->removePublication($publication);
             $em->persist($apprentice);
         }
@@ -547,12 +547,12 @@ class PublicationController extends AbstractController
         $em->flush();
 
         //Create the response
-        $response=array('deleted'=>true);
+        $response = array('deleted'=>true);
 
         return new JsonResponse($response,200);
     }
 
-    private function getPublicationsPaginator($cursor, $itemSize, $filter)
+    private function getPublicationsPaginator($cursor, $itemSize, $filter): Paginator
     {
         if ($cursor == -1) {
             $dql = "SELECT p
@@ -590,7 +590,7 @@ class PublicationController extends AbstractController
         return new Paginator($query, $fetchJoinCollection = true);
     }
 
-    private function getPublicationsByCategoryPaginator($cursor, $itemSize, $filter, $name, $names)
+    private function getPublicationsByCategoryPaginator($cursor, $itemSize, $filter, $name, $names): Paginator
     {
         if ($cursor == -1) {
             $dql = "SELECT p
@@ -632,7 +632,7 @@ class PublicationController extends AbstractController
         return new Paginator($query, $fetchJoinCollection = true);
     }
 
-    private function getPublicationsByExpertPaginator($cursor, $itemSize, $filter, $names)
+    private function getPublicationsByExpertPaginator($cursor, $itemSize, $filter, $names): Paginator
     {
         if ($cursor == -1) {
             $dql = "SELECT p

@@ -61,7 +61,7 @@ class UserController extends AbstractController
         $data = $this->serializer->serialize($user, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
 
         //Create the response
-        $response=array('user'=>json_decode($data));
+        $response = array('user'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -119,17 +119,17 @@ class UserController extends AbstractController
         if ($user->getUsername() !== $old->getUsername()) {
             //Check if new user is taken
             $exists = $doctrine->getRepository(User::class)->findOneBy(['username' => $user->getUSername()]);
-            if ($exists != null) {
-                $response=array('error'=>'Username already exists');
+            if ($exists !== null) {
+                $response = array('error'=>'Username already exists');
                 return new JsonResponse($response,409);
             }
 
             //Change user data
-            if ($apprentice != null) {
+            if ($apprentice !== null) {
                 $apprentice->setUsername($user->getUsername());
                 $em->persist($apprentice);
             }
-            if ($expert != null) {
+            if ($expert !== null) {
                 $expert->setUsername($user->getUsername());
                 $em->persist($expert);
             }
@@ -149,7 +149,7 @@ class UserController extends AbstractController
         $data = $this->serializer->serialize($user, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
 
         //Create the response
-        $response=array('user'=>json_decode($data));
+        $response = array('user'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -157,7 +157,7 @@ class UserController extends AbstractController
     #[Route('/api/user/change_password', name: 'change_password', methods: ['PUT'])]
     /**
      * @Route("/api/user/change_password", name="change_password", methods={"PUT"})
-     * @OA\Response(response=200, description="Edits a user",
+     * @OA\Response(response=200, description="Change user password",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="done", type="boolean")
      * ))
@@ -195,7 +195,7 @@ class UserController extends AbstractController
         //Check old password is correct
         $check = $this->encoder->isPasswordValid($user, $passwords->getOldPassword());
         if (!$check) {
-            $response=array('error'=>'Password mismatches');
+            $response = array('error'=>'Password mismatches');
             return new JsonResponse($response,409);
         }
 
@@ -211,7 +211,7 @@ class UserController extends AbstractController
         $data = $this->serializer->serialize($old, 'json', [AbstractNormalizer::GROUPS => ['profile']]);
 
         //Create the response
-        $response=array('user'=>json_decode($data));
+        $response = array('user'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -219,7 +219,7 @@ class UserController extends AbstractController
     #[Route('/api/user/check_password', name: 'check_password', methods: ['POST'])]
     /**
      * @Route("/api/user/check_password", name="check_password", methods={"POST"})
-     * @OA\Response(response=200, description="Edits a user",
+     * @OA\Response(response=200, description="Check if password is correct",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="correct", type="boolean")
      * ))
@@ -239,7 +239,6 @@ class UserController extends AbstractController
 
         //Get old user
         $user = new User();
-        $username = $user->getUsername();
         $old = $this->getUser();
 
         //Deserialize to obtain object data
@@ -251,7 +250,7 @@ class UserController extends AbstractController
         $check = $this->encoder->isPasswordValid($old, $user->getPassword());
 
         //Create the response
-        $response=array('correct'=>$check);
+        $response = array('correct'=>$check);
 
         return new JsonResponse($response, 200);
     }
@@ -269,16 +268,10 @@ class UserController extends AbstractController
      * ))
      * @OA\Tag(name="Users")
      * @Security(name="Bearer")
-     * @param $pass
      * @return Response
      */
-    public function deleteUser($pass): Response
+    public function deleteUser(): Response
     {
-        //Deserialize to obtain object data
-        //$pass = $this->serializer->deserialize($request->getContent(),User::class, 'json');
-        //$password = $this->encoder->encodePassword($pass, $pass->getPassword());
-        //$pass->setPassword($password);
-
         //Get the doctrine
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
@@ -303,11 +296,11 @@ class UserController extends AbstractController
         $nonactive->setRoles($user->getRoles());
 
         //Remove the user
-        if ($apprentice != null) {
+        if ($apprentice !== null) {
             $nonactive->seType('apprentice');
             $apprentice->setUserdata(null);
         }
-        if ($expert != null) {
+        if ($expert !== null) {
             $nonactive->seType('expert');
             $expert->setUserdata(null);
         }
@@ -316,7 +309,7 @@ class UserController extends AbstractController
         $em->flush();
 
         //Create the response
-        $response=array('deleted'=>true);
+        $response = array('deleted'=>true);
 
         return new JsonResponse($response,200);
     }

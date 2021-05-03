@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Annotations as OA;
+use Nelmio\ApiDocBundle\Annotation\Security;
 
 class NotificationController extends AbstractController
 {
@@ -24,11 +25,12 @@ class NotificationController extends AbstractController
     #[Route('/api/notify', name: 'notify', methods: ['POST'])]
     /**
      * @Route("/api/notify", name="notify", methods={"POST"})
-     * @OA\Response(response=200, description="Adds a valoration",
+     * @OA\Response(response=200, description="Notify a user",
      *     @OA\JsonContent(type="object",
      *     @OA\Property(property="send", type="boolean")
      * ))
      * @OA\Tag(name="Notifications")
+     * @Security()
      * @return Response
      */
     public function notify(): Response
@@ -36,7 +38,7 @@ class NotificationController extends AbstractController
         $this->notification->sendMessage();
 
         //Create the response
-        $response=array('send'=>true);
+        $response = array('send'=>true);
 
         return new JsonResponse($response,200);
     }

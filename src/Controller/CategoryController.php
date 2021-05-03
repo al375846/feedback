@@ -84,10 +84,10 @@ class CategoryController extends AbstractController
 
         //Get the parent category
         $parentName = $category->getParent();
-        if($parentName != null) {
+        if($parentName !== null) {
             $parentName = $parentName->getName();
             $parent = $doctrine->getRepository(Category::class)->findOneBy(['name'=>$parentName]);
-            if ($parent == null) {
+            if ($parent === null) {
                 $response=array('error'=>'Parent category not found');
                 return new JsonResponse($response,404);
             }
@@ -104,7 +104,7 @@ class CategoryController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('category'=>json_decode($data));
+        $response = array('category'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -138,7 +138,7 @@ class CategoryController extends AbstractController
         $data = $this->serializer->serialize($categories, 'json');
 
         //Create the response
-        $response=array('categories'=>json_decode($data));
+        $response = array('categories'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -171,7 +171,7 @@ class CategoryController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('categories'=>json_decode($data));
+        $response = array('categories'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }
@@ -200,8 +200,8 @@ class CategoryController extends AbstractController
 
         //Get the category
         $category = $doctrine->getRepository(Category::class)->find($id);
-        if ($category == null) {
-            $response=array('error'=>'Category not found');
+        if ($category === null) {
+            $response = array('error'=>'Category not found');
             return new JsonResponse($response,404);
         }
 
@@ -287,8 +287,8 @@ class CategoryController extends AbstractController
 
         //Get the category
         $category = $doctrine->getRepository(Category::class)->find($id);
-        if ($category == null) {
-            $response=array('error'=>'Category not found');
+        if ($category === null) {
+            $response = array('error'=>'Category not found');
             return new JsonResponse($response,404);
         }
 
@@ -299,11 +299,11 @@ class CategoryController extends AbstractController
 
         //Get the parent category
         $parentName = $category->getParent();
-        if($parentName != null) {
+        if($parentName !== null) {
             $parentName = $parentName->getName();
             $parent = $doctrine->getRepository(Category::class)->findOneBy(['name'=>$parentName]);
-            if ($parent == null) {
-                $response=array('error'=>'Parent category not found');
+            if ($parent === null) {
+                $response = array('error'=>'Parent category not found');
                 return new JsonResponse($response,404);
             }
             $category->setParent($parent);
@@ -319,7 +319,7 @@ class CategoryController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('category'=>json_decode($data));
+        $response = array('category'=>json_decode($data));
 
         return new JsonResponse($response,200);
     }

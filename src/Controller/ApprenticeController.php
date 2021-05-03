@@ -39,8 +39,8 @@ class ApprenticeController extends AbstractController
      *          @OA\Property(property="name", type="string")),
      *     @OA\Property(property="description", type="string"),
      *     @OA\Property(property="tags", type="array", @OA\Items(type="string")),
-     *     @OA\Property(property="video", type="string"),
-     *     @OA\Property(property="document", type="string"),
+     *     @OA\Property(property="video", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="document", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
      *     @OA\Property(property="date", type="string", format="date-time")
      * ))))
@@ -66,8 +66,8 @@ class ApprenticeController extends AbstractController
         $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username'=>$username]);
 
         //Check if the user is an apprentice
-        if ($apprentice == null) {
-            $response=array('error'=>'The user is not an apprentice');
+        if ($apprentice === null) {
+            $response = array('error'=>'The user is not an apprentice');
             return new JsonResponse($response, 409);
         }
 
@@ -81,7 +81,7 @@ class ApprenticeController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('publications'=>json_decode($data));
+        $response = array('publications'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -119,8 +119,8 @@ class ApprenticeController extends AbstractController
         $apprentice = $doctrine->getRepository(Apprentice::class)->findOneBy(['username'=>$username]);
 
         //Check if the user is an apprentice
-        if ($apprentice == null) {
-            $response=array('error'=>'The user is not an apprentice');
+        if ($apprentice === null) {
+            $response = array('error'=>'The user is not an apprentice');
             return new JsonResponse($response, 409);
         }
 
@@ -160,7 +160,7 @@ class ApprenticeController extends AbstractController
         $data = $this->serializer->serialize($history, 'json');
 
         //Create the response
-        $response=array('history'=>json_decode($data));
+        $response = array('history'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }

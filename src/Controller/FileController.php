@@ -55,11 +55,11 @@ class FileController extends AbstractController
      * @param $filename
      * @return Response
      */
-    public function getFeedbackFile($filename): Response {
+    public function getFile($filename): Response {
         //Ask for the file
         $result = $this->uploader->getFile($filename);
-        if ($result == null) {
-            $response=array('error'=>'File not found');
+        if ($result === null) {
+            $response = array('error'=>'File not found');
             return new JsonResponse($response,404);
         }
         $mime = $result[0];
@@ -112,8 +112,8 @@ class FileController extends AbstractController
 
         //Get feedback
         $feedback = $doctrine->getRepository(Feedback::class)->find($id);
-        if ($feedback == null) {
-            $response=array('error'=>'Feedback not found');
+        if ($feedback === null) {
+            $response = array('error'=>'Feedback not found');
             return new JsonResponse($response,404);
         }
 
@@ -138,7 +138,7 @@ class FileController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('documents'=>json_decode($data));
+        $response = array('documents'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -174,8 +174,8 @@ class FileController extends AbstractController
     {
         //Get publication
         $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
-        if ($publication == null) {
-            $response=array('error'=>'Publication not found');
+        if ($publication === null) {
+            $response = array('error'=>'Publication not found');
             return new JsonResponse($response, 404);
         }
 
@@ -200,7 +200,7 @@ class FileController extends AbstractController
         ]);
 
         //Create the response
-        $response=array('documents'=>json_decode($data));
+        $response = array('documents'=>json_decode($data));
 
         return new JsonResponse($response, 200);
     }
@@ -225,8 +225,8 @@ class FileController extends AbstractController
     public function deleteFeedbackFile($filename, $id): Response {
         //Get the feedback
         $feedback = $this->getDoctrine()->getRepository(Feedback::class)->find($id);
-        if ($feedback == null) {
-            $response=array('error'=>'Feedback not found');
+        if ($feedback === null) {
+            $response = array('error'=>'Feedback not found');
             return new JsonResponse($response,404);
         }
 
@@ -240,7 +240,7 @@ class FileController extends AbstractController
 
         //Check if the file has been deleted
         if (!$result[3]) {
-            $response=array('error'=>'File not found');
+            $response = array('error'=>'File not found');
             return new JsonResponse($response,404);
         }
 
@@ -253,7 +253,7 @@ class FileController extends AbstractController
         $em->flush();
 
         //Create the response
-        $response=array('deleted'=>true);
+        $response = array('deleted'=>true);
 
         return new JsonResponse($response,200);
     }
@@ -278,8 +278,8 @@ class FileController extends AbstractController
     public function deletePublicationFile($filename, $id): Response {
         //Get the publication
         $publication = $this->getDoctrine()->getRepository(Publication::class)->find($id);
-        if ($publication == null) {
-            $response=array('error'=>'Feedback not found');
+        if ($publication === null) {
+            $response = array('error'=>'Feedback not found');
             return new JsonResponse($response,404);
         }
 
@@ -293,7 +293,7 @@ class FileController extends AbstractController
 
         //Check if the file has been deleted
         if (!$result[3]) {
-            $response=array('error'=>'File not found');
+            $response = array('error'=>'File not found');
             return new JsonResponse($response,404);
         }
 
@@ -306,7 +306,7 @@ class FileController extends AbstractController
         $em->flush();
 
         //Create the response
-        $response=array('deleted'=>true);
+        $response = array('deleted'=>true);
 
         return new JsonResponse($response,200);
     }
@@ -321,13 +321,9 @@ class FileController extends AbstractController
                 $document[count($document)] = $filename;
             }
             elseif ($extension == "mp4") {
-                $filesize = filesize($file);
-                $filesize = round($filesize / 1024);
                 $video[count($video)] = $filename;
             }
             elseif ($extension == "jpg" or $extension == "jpeg" or $extension == "png") {
-                $filesize = filesize($file);
-                $filesize = round($filesize / 1024);
                 $images[count($images)] = $filename;
             }
         }

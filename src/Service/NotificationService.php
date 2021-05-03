@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Notification;
+use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 
 class NotificationService {
@@ -25,6 +26,10 @@ class NotificationService {
     function sendMessage()
     {
         $notification = $this->em->getRepository(Notification::class)->findByFisrtNotSent();
+        $user = $this->em->getRepository(User::class)->findBy(['username'=>$notification->getUsername()]);
+        $ids = [];
+        if ($user !== null)
+            $ids = $user->getNotificationsids();
         if ($notification !== null) {
             $content = array(
                 "en" => $notification->getMessage(),
@@ -59,10 +64,11 @@ class NotificationService {
 
     }
 
-    function enqueueMessage($playerIds, $message) {
+    function enqueueMessage($username, $message) {
         $notification = new Notification();
         $notification->setMessage($message);
-        $notification->setPlayerids($playerIds);
+        $notification->setPlayerids([]);
+        $notification->setUsername($username);
         $notification->setSent(false);
 
         $this->em->persist($notification);

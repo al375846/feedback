@@ -41,11 +41,11 @@ class PublicController extends AbstractController
      * @param $filename
      * @return Response
      */
-    public function getFeedbackFile($filename): Response {
+    public function getFilePublic($filename): Response {
         //Ask for the file
         $result = $this->uploader->getFile($filename);
-        if ($result == null) {
-            $response=array('error'=>'File not found');
+        if ($result === null) {
+            $response = array('error'=>'File not found');
             return new JsonResponse($response,404);
         }
         $mime = $result[0];
