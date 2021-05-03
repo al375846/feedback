@@ -23,7 +23,7 @@ class Notification
     private $message;
 
     /**
-     * @ORM\Column(type="array")
+     * @ORM\Column(type="array", nullable=true)
      */
     private $playerids = [];
 
@@ -33,7 +33,7 @@ class Notification
     private $sent;
 
     /**
-     * @ORM\Column(type="string", length=255)
+     * @ORM\Column(type="string", length=255, nullable=true)
      */
     private $username;
 

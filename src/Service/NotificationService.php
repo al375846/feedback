@@ -26,11 +26,11 @@ class NotificationService {
     function sendMessage()
     {
         $notification = $this->em->getRepository(Notification::class)->findByFisrtNotSent();
-        $user = $this->em->getRepository(User::class)->findBy(['username'=>$notification->getUsername()]);
-        $ids = [];
-        if ($user !== null)
-            $ids = $user->getNotificationsids();
         if ($notification !== null) {
+            $user = $this->em->getRepository(User::class)->findOneBy(['username'=>$notification->getUsername()]);
+            $ids = [];
+            if ($user !== null)
+                $ids = $user->getNotificationsids();
             $content = array(
                 "en" => $notification->getMessage(),
                 "es" => $notification->getMessage()
@@ -38,7 +38,7 @@ class NotificationService {
 
             $fields = array(
                 'app_id' => "577d1044-4e8f-423a-b22d-1eedfff41a75",
-                'include_player_ids' => $notification->getPlayerids(),
+                'include_player_ids' => $ids,
                 'contents' => $content
             );
 
