@@ -112,6 +112,7 @@ class PublicationController extends AbstractController
     /**
      * @Route("/api/publication", name="publication_get", methods={"GET"})
      * @OA\Parameter(name="cursor", in="query", required=false)
+     * @OA\Parameter(name="page", in="query", required=false)
      * @OA\Parameter(name="filter", in="query", required=false)
      * @OA\Response(response=200, description="Gets all publications",
      *     @OA\JsonContent(type="object",
@@ -138,11 +139,12 @@ class PublicationController extends AbstractController
     {
         //Get cursor and filter
         $cursor = $request->query->get('cursor', -1);
+        $page = $request->query->get('page', 1);
         $filter = strtolower($request->query->get('filter', ""));
         $itemSize = 24;
 
         //Get publications
-        $paginator = $this->getPublicationsPaginator($cursor, $itemSize, $filter);
+        $paginator = $this->getPublicationsPaginator($cursor, $itemSize, $filter, $page);
 
         $publications = [];
         foreach ($paginator as $publication) {
@@ -171,6 +173,7 @@ class PublicationController extends AbstractController
     /**
      * @Route("/api/publication/category/{id}", name="publication_get_category", methods={"GET"})
      * @OA\Parameter(name="cursor", in="query", required=false)
+     * @OA\Parameter(name="page", in="query", required=false)
      * @OA\Parameter(name="filter", in="query", required=false)
      * @OA\Response(response=200, description="Gets all publications",
      *     @OA\JsonContent(type="object",
@@ -202,6 +205,7 @@ class PublicationController extends AbstractController
     {
         //Get cursor and filter
         $cursor = $request->query->get('cursor', -1);
+        $page = $request->query->get('page', 1);
         $filter = strtolower($request->query->get('filter', ""));
         $itemSize = 24;
 
@@ -219,7 +223,7 @@ class PublicationController extends AbstractController
             $names[] = strtolower($sub->getName());
 
         //Get publications
-        $paginator = $this->getPublicationsByCategoryPaginator($cursor, $itemSize, $filter, $name, $names);
+        $paginator = $this->getPublicationsByCategoryPaginator($cursor, $itemSize, $filter, $name, $names, $page);
 
         $publications = [];
         foreach ($paginator as $publication) {
@@ -248,6 +252,7 @@ class PublicationController extends AbstractController
     /**
      * @Route("/api/publication/expert", name="publication_get_expert", methods={"GET"})
      * @OA\Parameter(name="cursor", in="query", required=false)
+     * @OA\Parameter(name="page", in="query", required=false)
      * @OA\Parameter(name="filter", in="query", required=false)
      * @OA\Response(response=200, description="Gets all publications",
      *     @OA\JsonContent(type="object",
@@ -278,6 +283,7 @@ class PublicationController extends AbstractController
     {
         //Get cursor and filter
         $cursor = $request->query->get('cursor', -1);
+        $page = $request->query->get('page', 1);
         $filter = strtolower($request->query->get('filter', ""));
         $itemSize = 24;
 
@@ -293,7 +299,7 @@ class PublicationController extends AbstractController
             $names[] = strtolower($fav->getCategory()->getName());
 
         //Get publications
-        $paginator = $this->getPublicationsByExpertPaginator($cursor, $itemSize, $filter, $names);
+        $paginator = $this->getPublicationsByExpertPaginator($cursor, $itemSize, $filter, $names, $page);
 
         $publications = [];
         foreach ($paginator as $publication) {
@@ -552,7 +558,7 @@ class PublicationController extends AbstractController
         return new JsonResponse($response,200);
     }
 
-    private function getPublicationsPaginator($cursor, $itemSize, $filter): Paginator
+    private function getPublicationsPaginator($cursor, $itemSize, $filter, $page): Paginator
     {
         if ($cursor == -1) {
             $dql = "SELECT p
@@ -583,14 +589,14 @@ class PublicationController extends AbstractController
             $query = $this->getDoctrine()->getManager()->createQuery($dql)
                 ->setParameter('filter', '%'.$filter.'%')
                 ->setParameter('cursor', $cursor)
-                ->setFirstResult(0)
+                ->setFirstResult($itemSize * ($page - 1))
                 ->setMaxResults($itemSize);
         }
 
         return new Paginator($query, $fetchJoinCollection = true);
     }
 
-    private function getPublicationsByCategoryPaginator($cursor, $itemSize, $filter, $name, $names): Paginator
+    private function getPublicationsByCategoryPaginator($cursor, $itemSize, $filter, $name, $names, $page): Paginator
     {
         if ($cursor == -1) {
             $dql = "SELECT p
@@ -625,14 +631,14 @@ class PublicationController extends AbstractController
                 ->setParameter('cursor', $cursor)
                 ->setParameter('category', $name)
                 ->setParameter('subcategory', $names)
-                ->setFirstResult(0)
+                ->setFirstResult($itemSize * ($page - 1))
                 ->setMaxResults($itemSize);
         }
 
         return new Paginator($query, $fetchJoinCollection = true);
     }
 
-    private function getPublicationsByExpertPaginator($cursor, $itemSize, $filter, $names): Paginator
+    private function getPublicationsByExpertPaginator($cursor, $itemSize, $filter, $names, $page): Paginator
     {
         if ($cursor == -1) {
             $dql = "SELECT p
@@ -665,7 +671,7 @@ class PublicationController extends AbstractController
                 ->setParameter('filter', '%'.$filter.'%')
                 ->setParameter('cursor', $cursor)
                 ->setParameter('subcategory', $names)
-                ->setFirstResult(0)
+                ->setFirstResult($itemSize * ($page - 1))
                 ->setMaxResults($itemSize);
         }
 
