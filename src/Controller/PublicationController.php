@@ -150,9 +150,14 @@ class PublicationController extends AbstractController
         foreach ($paginator as $publication) {
             $publications[] = $publication;
         }
+        if (count($publications) > 0) {
         $last = $publications[count($publications) - 1]->getId();
         $left = $this->getDoctrine()->getRepository(Publication::class)->findAllGreaterId($last, $filter);
         $leftSize = count($left);
+        }
+        else {
+            $leftSize = 0;
+        }
 
         //Serialize the response data
         $data = $this->serializer->serialize($publications, 'json', [
@@ -229,9 +234,14 @@ class PublicationController extends AbstractController
         foreach ($paginator as $publication) {
             $publications[] = $publication;
         }
+        if (count($publications) > 0) {
         $last = $publications[count($publications) - 1]->getId();
         $left = $doctrine->getRepository(Publication::class)->findAllGreaterIdByCategory($last, $filter, $name, $names);
         $leftSize = count($left);
+        }
+        else {
+            $leftSize = 0;
+        }
 
         //Serialize the response data
         $data = $this->serializer->serialize($publications, 'json', [
@@ -305,11 +315,14 @@ class PublicationController extends AbstractController
         foreach ($paginator as $publication) {
             $publications[] = $publication;
         }
-
-        $last = $publications[count($publications) - 1]->getId();
-        $left = $doctrine->getRepository(Publication::class)->findAllGreaterIdByExpert($last, $filter, $names);
-        $leftSize = count($left);
-
+        if (count($publications) > 0) {
+            $last = $publications[count($publications) - 1]->getId();
+            $left = $doctrine->getRepository(Publication::class)->findAllGreaterIdByExpert($last, $filter, $names);
+            $leftSize = count($left);
+        }
+        else {
+            $leftSize = 0;
+        }
         //Serialize the response data
         $data = $this->serializer->serialize($publications, 'json', [
             AbstractNormalizer::GROUPS => ['publications']
