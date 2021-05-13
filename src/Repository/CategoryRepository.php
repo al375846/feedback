@@ -37,6 +37,40 @@ class CategoryRepository extends ServiceEntityRepository
         return $query->getResult();
     }
 
+    /**
+     * @return Category[] Returns an array of Category objects
+     */
+    public function findParentCategories(): array
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQueryBuilder()
+            ->select("c")
+            ->from("App\Entity\Category", "c")
+            ->where("c.parent is null")
+            ->getQuery();
+
+        return $query->getResult();
+    }
+
+    /**
+     * @param $category
+     * @return Category[] Returns an array of Category objects
+     */
+    public function findSubCategories($category): array
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQueryBuilder()
+            ->select("c.id, c.name, c.description")
+            ->from("App\Entity\Category", "c")
+            ->where("c.parent = :category")
+            ->setParameter('category', $category)
+            ->getQuery();
+
+        return $query->getResult();
+    }
+
 
     /*
     public function findOneBySomeField($value): ?Category

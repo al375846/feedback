@@ -75,11 +75,14 @@ class SuggestionController extends AbstractController
         $doctrine = $this->getDoctrine();
         $em = $doctrine->getManager();
 
-        //Check it doesnt exist
-        $sug = $doctrine->getRepository(Suggestion::class)->findOneBy(['name'=>$suggestion->getName()]);
-        if ($sug !== null) {
-            $response = array('error'=>'Suggestion already exists');
-            return new JsonResponse($response,409);
+        //Check it doesnt exist if its a category
+        if ($suggestion->getType() === 'category') {
+            $sug = $doctrine->getRepository(Suggestion::class)
+                ->findOneBy(['name'=>$suggestion->getName()]);
+            if ($sug !== null) {
+                $response = array('error'=>'Suggestion already exists');
+                return new JsonResponse($response,409);
+            }
         }
 
         //Get the parent category

@@ -131,11 +131,13 @@ class CategoryController extends AbstractController
      */
     public function getCategories(CategoryTree $categoryTree): Response
     {
-        //Get the categories
-        $categories = $categoryTree->buildTree();
+        //Get the parent categories
+        $categories = $this->getDoctrine()->getRepository(Category::class)->findParentCategories();
 
         //Serialize the response data
-        $data = $this->serializer->serialize($categories, 'json');
+        $data = $this->serializer->serialize($categories, 'json', [
+            AbstractNormalizer::GROUPS => ['children']
+        ]);
 
         //Create the response
         $response = array('categories'=>json_decode($data));

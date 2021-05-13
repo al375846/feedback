@@ -21,21 +21,21 @@ class Category
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
      * @OA\Property(type="integer")
-     * @Groups({"publications", "categories", "fav_categories", "suggestions"})
+     * @Groups({"publications", "categories", "fav_categories", "suggestions", "children"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=255)
      * @OA\Property(type="string", maxLength=255)
-     * @Groups({"publications", "categories", "feedbacks", "fav_categories", "suggestions", "incidences"})
+     * @Groups({"publications", "categories", "feedbacks", "fav_categories", "suggestions", "incidences", "children"})
      */
     private $name;
 
     /**
      * @ORM\Column(type="text")
      * @OA\Property(type="string")
-     * @Groups({"categories", "fav_categories", "suggestions"})
+     * @Groups({"categories", "fav_categories", "suggestions", "children"})
      */
     private $description;
 
@@ -49,6 +49,7 @@ class Category
 
     /**
      * @ORM\OneToMany(targetEntity=Category::class, mappedBy="parent")
+     * @Groups({"children"})
      */
     private $subcategories;
 
