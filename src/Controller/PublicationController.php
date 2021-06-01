@@ -585,7 +585,7 @@ class PublicationController extends AbstractController
                     ORDER BY p.id DESC";
             $query = $this->getDoctrine()->getManager()->createQuery($dql)
                 ->setParameter('filter', '%'.$filter.'%')
-                ->setFirstResult(0)
+                ->setFirstResult($itemSize * ($page - 1))
                 ->setMaxResults($itemSize);
         }
         else {
@@ -625,7 +625,7 @@ class PublicationController extends AbstractController
                 ->setParameter('filter', '%'.$filter.'%')
                 ->setParameter('category', $name)
                 ->setParameter('subcategory', $names)
-                ->setFirstResult(0)
+                ->setFirstResult($itemSize * ($page - 1))
                 ->setMaxResults($itemSize);
         }
         else {
@@ -666,7 +666,7 @@ class PublicationController extends AbstractController
             $query = $this->getDoctrine()->getManager()->createQuery($dql)
                 ->setParameter('filter', '%'.$filter.'%')
                 ->setParameter('subcategory', $names)
-                ->setFirstResult(0)
+                ->setFirstResult($itemSize * ($page - 1))
                 ->setMaxResults($itemSize);
         }
         else {
